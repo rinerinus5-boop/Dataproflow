@@ -1,0 +1,235 @@
+Hello, I'm looking for an affordable full stack developer to help create a SaaS marketing company
+
+This is what I want to recreate;
+
+
+
+Think of it as a digital bridge: it takes data from places like Facebook, Instagram, TikTok, or Shopify and automatically plugs it into Google Looker Studio (formerly Data Studio) or Google Sheets so you can see your results in a pretty dashboard without any manual typing.
+​1. How it Works (The 3-Step Process)
+​Connect: You log in to your social media or ad accounts
+​Destinations: You choose where the data should go (usually a Looker Studio dashboard).
+​Visualize: Use one of their 50 pre-made templates to instantly see your "Total Spend," "ROAS," or "Follower Growth" in charts and graphs.
+
+
+
+I want to build a website fully in Nextjs with this website template from framer for the frontend:https://druo-template.framer.website/
+
+**requirements, MVP scope, UI direction, and references**, all consistent with everything we discussed in this thread.
+
+
+
+---
+
+
+
+MVP Requirements & Project Details
+
+
+
+Thanks, that works well. Below are the details to get started on the 20th
+
+
+
+### 1. MVP Requirements (Scope)
+
+
+
+**Goal of the MVP**
+Build a **SaaS‑based marketing data platform** that connects initial social media data sources and visualizes the data in a clear dashboard.
+
+
+
+**Initial data connectors (Phase 1 MVP):**
+- Instagram (Meta)
+- Facebook (Meta)
+- TikTok
+
+
+
+**Core backend requirements:**
+- Data connectors using official APIs
+- Secure authentication (OAuth where required)
+- Central data layer to normalize metrics across platforms
+- Scalable backend suitable for SaaS growth
+- Stripe integration for subscriptions (monthly plans)
+
+
+
+**Core frontend requirements:**
+- Clean dashboard UI to display key KPIs (impressions, reach, clicks, engagement, conversions where available)
+- Platform selector (Instagram / Facebook / TikTok)
+- Date range filtering
+- Responsive web interface (desktop first, mobile friendly)
+- Basic account area (login, subscription status)
+
+
+
+**Out of scope for MVP (later phase):**
+- Advanced analytics / attribution
+- Marketplace features
+- Affiliate system UI
+- AI insights
+
+
+
+---
+
+
+
+### 2. Mockups / Wireframes / Designs
+
+
+
+- I **do not have finalized designs yet**
+- I’m open to:
+- A **simple, clean dashboard layout**
+- Functional first, polish later
+- You can propose:
+- A basic wireframe for approval
+- Standard SaaS dashboard patterns
+
+
+
+---
+
+
+
+### 3. UI / Theme / Color Preferences
+
+
+
+**General direction:**
+- Modern SaaS look
+- Clean, minimal, professional
+- Easy‑to‑read data visuals
+
+
+
+**Style references (directional, not exact copies):**
+- Looker Studio (clarity and simplicity)
+- Supermetrics (structured data focus)
+- Stripe Dashboard (clean SaaS UI)
+- Linear.app (minimal, modern feel)
+
+
+
+**Colors:**
+- Neutral base (white / light gray or dark mode optional)
+- One primary accent color (blue or purple is fine for MVP)
+
+
+
+---
+
+
+
+### 4. Technical Preferences (Flexible)
+
+
+
+- Backend: open to your recommendation (Node.js / Python)
+- Frontend: modern framework (React‑based preferred)
+- Database: scalable SaaS‑ready setup
+- Hosting: cloud‑based
+- Code should be:
+- Clean
+- Well‑structured
+- Easy to extend later
+
+
+
+---
+
+
+
+### 5. Timeline & Working Style
+
+
+
+- MVP connectors: Instagram, Facebook, TikTok
+- Timeline: **~2 weeks for first working version**
+- I prefer:
+- Clear milestones
+- Short updates during development
+- Ability to test the product early
+
+
+
+---
+
+
+
+If anything needs clarification or you want to propose improvements to the MVP structure, feel free to suggest them. I’m ready to start immediately.
+
+ happy to clarify everything so we can start smoothly.
+
+
+
+**1. Design consistency (theme, layout, colors)**
+The overall direction should be **very similar to Porter Metrics** in terms of structure, layout, and UX. I’d like to use a **Framer‑style SaaS template as inspiration**, but implemented on **Nextjs**.
+You don’t need to copy the template 1:1 — there is flexibility for adjustments — but the **clean SaaS look, spacing, flow, and clarity should stay consistent**. Any design changes should stay within that same visual language.
+
+
+
+**2. Logo & company name**
+The logo is **not finalized yet**.
+For now, please proceed using the **company name as a text logo or temporary placeholder**. Once we finalize the brand name and logo, we can swap it in without redesigning the layout.
+
+
+
+**3. Signup / login & subscriptions**
+Signup and login **will be tied to subscription plans**.
+This is a **SaaS model**, so users should:
+- Sign up / log in
+- Select or be assigned a plan (trial → paid subscription)
+- Manage their subscription (active, canceled, upgraded)
+
+
+
+Payments and plan selection should look and feel **similar to the pricing and checkout flow on Porter Metrics** (clean, simple, Stripe‑style UX).
+
+
+
+**4. Admin panel**
+Yes, we **do need an admin panel**.
+At minimum, it should allow us to:
+- View registered users
+- See subscription status (trial / active / canceled)
+- Manually manage or disable accounts if needed
+
+
+
+This can be basic for the first version and expanded later.
+
+
+
+**5. Email verification**
+Yes, please implement **email verification after signup**.
+This is important for:
+- Security
+- Preventing fake accounts
+- SaaS best practices
+
+
+
+---
+
+
+
+**Summary direction**
+- Design inspiration: **Porter Metrics + Framer SaaS template style**
+- Platform: **Nextjs**
+- Payments: **Stripe‑based, similar UX to Porter Metrics**
+- Auth: signup + login + subscription logic
+- Admin panel: yes (basic MVP level)
+- Email verification: yes
+
+
+
+If you have any suggestions that improve scalability or simplify the MVP while keeping this structure, feel free to propose them.
+
+
+
+Looking forward to starting.
+
+I'm using border metrics as a framework, I like their current pricing page: https://portermetrics.com/en/pricing/

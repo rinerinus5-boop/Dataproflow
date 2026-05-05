@@ -1,0 +1,70 @@
+# Development Guidelines & Standards
+
+To ensure smooth collaboration and proper assignment of an agent, please follow the guidelines below:
+
+## 1. Component Architecture
+
+* Always use the best architectural approach when building components.
+* Follow a component based structure.
+* Ensure code is clean, reusable, and scalable.
+
+## 2. Animations
+
+* Use component based animations.
+* Implement consistent animation patterns across the application.
+* Reuse animation logic where possible instead of rewriting it.
+
+## 3. Responsiveness
+
+* Always use a query container or proper responsive strategy.
+* Every screen must be fully responsive across all device sizes.
+* Test on desktop, tablet, and mobile before finalizing.
+
+## 4. Design & Theme Consistency
+
+* Use only the predefined theme colors.
+* Do not introduce custom or random colors.
+* Maintain visual consistency across all pages.
+
+## 5. UI Interaction & Feedback
+
+* All clickable actions must use a cursor pointer.
+* Implement proper loading states:
+
+  * Spinner loaders
+  * Skeleton loaders where appropriate
+* Avoid silent or unclear user interactions.
+
+## 6. Code Quality
+
+* Always use the most optimized and maintainable approach.
+* Prioritize performance and scalability.
+* Follow clean coding standards.
+
+## 7. Testing & Validation
+
+* Always test the application on different devices and browsers.
+* Ensure the application is fully responsive and accessible.
+* Validate all user inputs and handle errors gracefully.
+* Test all edge cases and potential user interactions.
+
+## 8. Security & Best Practices
+
+* Always use the most secure and maintainable approach.
+* Follow security best practices.
+* Ensure the application is fully secure and accessible.
+* Validate all user inputs and handle errors gracefully.
+* Test all edge cases and potential user interactions.
+
+
+## 9. SEO & Performance
+
+* Always use the most SEO-friendly and performant approach.
+* Follow SEO best practices.
+* Ensure the application is fully SEO-friendly and performant.
+* Validate all user inputs and handle errors gracefully.
+* Test all edge cases and potential user interactions.
+
+
+
+

@@ -1,0 +1,18 @@
+{
+  "timeZone": "America/New_York",
+  "dependencies": {},
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "dataStudio": {
+    "name": "Instagram Insights Connector",
+    "logoUrl": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png",
+    "company": "DataProFlow",
+    "companyUrl": "https://your-domain.com",
+    "addOnUrl": "https://your-domain.com/dashboard/connections",
+    "supportUrl": "https://your-domain.com/support",
+    "description": "Connect your Instagram Business Account insights to Looker Studio",
+    "sources": ["INSTAGRAM"],
+    "authType": ["NONE"],
+    "feeType": ["FREE"]
+  }
+}

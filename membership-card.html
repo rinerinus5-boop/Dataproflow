@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Card - APSUSM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .membership-card {
+            width: 540px;
+            height: 340px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Colorful border gradient */
+        .card-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 4px;
+            background: linear-gradient(
+                135deg,
+                #f7941d 0%,
+                #f7941d 15%,
+                #8dc63f 15%,
+                #8dc63f 30%,
+                #00a651 30%,
+                #00a651 45%,
+                #0072bc 45%,
+                #0072bc 60%,
+                #662d91 60%,
+                #662d91 75%,
+                #ed1c24 75%,
+                #ed1c24 100%
+            );
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Left side gradient stripe */
+        .left-stripe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background: linear-gradient(
+                to bottom,
+                #f7941d 0%,
+                #8dc63f 25%,
+                #00a651 50%,
+                #0072bc 75%,
+                #662d91 100%
+            );
+            border-radius: 20px 0 0 20px;
+        }
+
+        /* Bottom stripe */
+        .bottom-stripe {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(
+                to right,
+                #f7941d 0%,
+                #8dc63f 25%,
+                #00a651 50%,
+                #0072bc 75%,
+                #662d91 100%
+            );
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Flag section */
+        .flag-section {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 60px;
+            height: 40px;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .flag-mz {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(
+                to bottom,
+                #009639 0%,
+                #009639 33.33%,
+                #000000 33.33%,
+                #000000 36%,
+                #fcdd09 36%,
+                #fcdd09 64%,
+                #000000 64%,
+                #000000 66.66%,
+                #d21034 66.66%,
+                #d21034 100%
+            );
+        }
+
+        .flag-triangle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-left: 30px solid #d21034;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+        }
+
+        .flag-star {
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fcdd09;
+            font-size: 14px;
+        }
+
+        /* Header section */
+        .header-section {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: linear-gradient(135deg, #0072bc 0%, #00a651 100%);
+            padding: 8px 25px;
+            border-radius: 25px;
+        }
+
+        .header-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Photo section */
+        .photo-section {
+            position: absolute;
+            left: 30px;
+            top: 65px;
+            width: 120px;
+            height: 145px;
+        }
+
+        .photo-frame {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 3px solid #0072bc;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: #e0e0e0;
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Background icons */
+        .bg-icons {
+            position: absolute;
+            left: 25px;
+            top: 65px;
+            width: 140px;
+            height: 170px;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .bg-icons svg {
+            position: absolute;
+        }
+
+        /* Member name */
+        .member-name {
+            position: absolute;
+            left: 30px;
+            top: 215px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            width: 120px;
+            z-index: 10;
+            line-height: 1.3;
+        }
+
+        /* Logo section */
+        .logo-section {
+            position: absolute;
+            right: 30px;
+            top: 60px;
+            text-align: center;
+            width: 200px;
+        }
+
+        .logo-circle {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+            position: relative;
+        }
+
+        .logo-circle svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .org-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0072bc;
+            margin-bottom: 2px;
+        }
+
+        .org-name span {
+            color: #ed1c24;
+        }
+
+        .org-subtitle {
+            font-size: 8px;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        /* Member code section */
+        .code-section {
+            position: absolute;
+            bottom: 50px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .code-label {
+            background: linear-gradient(135deg, #f7941d 0%, #ed1c24 100%);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-label svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+
+        .code-label span {
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .code-value {
+            background: linear-gradient(135deg, #0072bc 0%, #00a651 100%);
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* Website */
+        .website {
+            position: absolute;
+            bottom: 18px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0072bc;
+        }
+
+        /* Medical icons background pattern */
+        .pattern-bg {
+            position: absolute;
+            top: 60px;
+            left: 160px;
+            width: 100px;
+            height: 180px;
+            opacity: 0.08;
+        }
+
+        .pattern-bg .icon {
+            position: absolute;
+            font-size: 24px;
+            color: #0072bc;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .membership-card {
+                width: 100%;
+                max-width: 360px;
+                height: 230px;
+            }
+
+            .photo-section {
+                width: 90px;
+                height: 110px;
+                left: 20px;
+                top: 55px;
+            }
+
+            .member-name {
+                font-size: 12px;
+                top: 170px;
+                width: 90px;
+                left: 20px;
+            }
+
+            .logo-section {
+                right: 15px;
+                top: 45px;
+                width: 140px;
+            }
+
+            .logo-circle {
+                width: 60px;
+                height: 60px;
+            }
+
+            .org-name {
+                font-size: 18px;
+            }
+
+            .org-subtitle {
+                font-size: 6px;
+            }
+
+            .code-section {
+                bottom: 40px;
+            }
+
+            .code-label {
+                padding: 5px 10px;
+            }
+
+            .code-label span {
+                font-size: 8px;
+            }
+
+            .code-value {
+                font-size: 10px;
+                padding: 5px 12px;
+            }
+
+            .website {
+                font-size: 11px;
+                bottom: 12px;
+            }
+
+            .header-section {
+                padding: 5px 15px;
+            }
+
+            .header-title {
+                font-size: 10px;
+            }
+
+            .flag-section {
+                width: 40px;
+                height: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <div class="membership-card">
+            <!-- Left gradient stripe -->
+            <div class="left-stripe"></div>
+            
+            <!-- Bottom gradient stripe -->
+            <div class="bottom-stripe"></div>
+
+            <!-- Flag -->
+            <div class="flag-section">
+                <div class="flag-mz">
+                    <div class="flag-triangle"></div>
+                    <span class="flag-star">★</span>
+                </div>
+            </div>
+
+            <!-- Header -->
+            <div class="header-section">
+                <span class="header-title">CARTÃO DE MEMBRO</span>
+            </div>
+
+            <!-- Background medical icons pattern -->
+            <div class="pattern-bg">
+                <span class="icon" style="top: 0; left: 0;">🏥</span>
+                <span class="icon" style="top: 0; left: 50px;">➕</span>
+                <span class="icon" style="top: 40px; left: 20px;">💊</span>
+                <span class="icon" style="top: 40px; left: 70px;">🩺</span>
+                <span class="icon" style="top: 80px; left: 0;">❤️</span>
+                <span class="icon" style="top: 80px; left: 50px;">🔬</span>
+                <span class="icon" style="top: 120px; left: 20px;">💉</span>
+            </div>
+
+            <!-- Photo -->
+            <div class="photo-section">
+                <div class="photo-frame">
+                    <!-- Replace src with actual photo -->
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop&crop=face" alt="Member Photo">
+                </div>
+            </div>
+
+            <!-- Member Name -->
+            <div class="member-name">
+                Acacio Gabriel<br>Mabasso
+            </div>
+
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Outer colorful ring -->
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#rainbow)" stroke-width="8"/>
+                        
+                        <!-- Inner white circle -->
+                        <circle cx="50" cy="50" r="38" fill="white"/>
+                        
+                        <!-- People figures -->
+                        <g transform="translate(25, 30)">
+                            <!-- Green person -->
+                            <ellipse cx="15" cy="35" rx="12" ry="8" fill="#00a651"/>
+                            <circle cx="15" cy="22" r="8" fill="#00a651"/>
+                            
+                            <!-- Blue person -->
+                            <ellipse cx="35" cy="35" rx="12" ry="8" fill="#0072bc"/>
+                            <circle cx="35" cy="22" r="8" fill="#0072bc"/>
+                            
+                            <!-- Yellow person (behind) -->
+                            <ellipse cx="25" cy="28" rx="10" ry="6" fill="#fcdd09"/>
+                            <circle cx="25" cy="18" r="6" fill="#fcdd09"/>
+                        </g>
+                        
+                        <!-- Red cross -->
+                        <g transform="translate(50, 20)">
+                            <rect x="-4" y="-10" width="8" height="20" fill="#ed1c24" rx="1"/>
+                            <rect x="-10" y="-4" width="20" height="8" fill="#ed1c24" rx="1"/>
+                        </g>
+                        
+                        <!-- Leaf accent -->
+                        <path d="M70 25 Q75 20 80 25 Q75 30 70 25" fill="#00a651"/>
+                        
+                        <defs>
+                            <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#f7941d"/>
+                                <stop offset="25%" style="stop-color:#8dc63f"/>
+                                <stop offset="50%" style="stop-color:#0072bc"/>
+                                <stop offset="75%" style="stop-color:#662d91"/>
+                                <stop offset="100%" style="stop-color:#ed1c24"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="org-name">AP<span>+</span>SUSM</div>
+                <div class="org-subtitle">
+                    Associación dos Professionalus de Saúdu<br>
+                    Unidos se Solidariós de Moçomêneic
+                </div>
+            </div>
+
+            <!-- Member Code -->
+            <div class="code-section">
+                <div class="code-label">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <span>CÓDIGO DE MEMBRO</span>
+                </div>
+                <div class="code-value">APSUSM-DR-2026-00005</div>
+            </div>
+
+            <!-- Website -->
+            <div class="website">www.apsusm.org</div>
+        </div>
+    </div>
+</body>
+</html>

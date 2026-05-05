@@ -1,0 +1,359 @@
+<!-- WordPress Embeddable Form - Copy everything below into your HTML widget -->
+<style>
+.zf-form-wrap { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+.zf-form-wrap * { margin: 0; padding: 0; box-sizing: border-box; }
+.zf-form-wrap .zf-container { max-width: 700px; width: 100%; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+.zf-form-wrap .zf-body { padding: 28px 32px; }
+.zf-form-wrap .zf-steps { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+.zf-form-wrap .zf-step { display: flex; align-items: center; gap: 8px; }
+.zf-form-wrap .zf-step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: #e5e7eb; color: #9ca3af; transition: all 0.3s; }
+.zf-form-wrap .zf-step.active .zf-step-num { background: #152a44; color: #fff; }
+.zf-form-wrap .zf-step.done .zf-step-num { background: #10b981; color: #fff; }
+.zf-form-wrap .zf-step-txt { font-size: 13px; color: #9ca3af; font-weight: 500; }
+.zf-form-wrap .zf-step.active .zf-step-txt { color: #374151; }
+.zf-form-wrap .zf-line { width: 40px; height: 2px; background: #e5e7eb; }
+.zf-form-wrap .zf-line.active { background: #152a44; }
+.zf-form-wrap .zf-panel { display: none; }
+.zf-form-wrap .zf-panel.active { display: block; }
+.zf-form-wrap .zf-section { margin-bottom: 20px; }
+.zf-form-wrap .zf-title { font-size: 12px; font-weight: 600; color: #152a44; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+.zf-form-wrap .zf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.zf-form-wrap .zf-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.zf-form-wrap .zf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.zf-form-wrap .zf-field { display: flex; flex-direction: column; }
+.zf-form-wrap .zf-field label { font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 5px; }
+.zf-form-wrap .zf-field label .req { color: #ef4444; margin-left: 2px; }
+.zf-form-wrap .zf-field input, .zf-form-wrap .zf-field select { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: inherit; transition: all 0.2s ease; background: #f9fafb; }
+.zf-form-wrap .zf-field input:focus, .zf-form-wrap .zf-field select:focus { outline: none; border-color: #152a44; background: #fff; box-shadow: 0 0 0 3px rgba(21,42,68,0.1); }
+.zf-form-wrap .zf-field input::placeholder { color: #9ca3af; }
+.zf-form-wrap .zf-field select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; padding-right: 32px; }
+.zf-form-wrap .zf-ms-wrap { position: relative; }
+.zf-form-wrap .zf-ms-display { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; background: #f9fafb; cursor: pointer; min-height: 40px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; transition: all 0.2s ease; }
+.zf-form-wrap .zf-ms-display:hover { border-color: #152a44; }
+.zf-form-wrap .zf-ms-display.active { border-color: #152a44; background: #fff; box-shadow: 0 0 0 3px rgba(21,42,68,0.1); }
+.zf-form-wrap .zf-ms-tag { background: #152a44; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+.zf-form-wrap .zf-ms-tag .rm { cursor: pointer; opacity: 0.8; font-size: 12px; }
+.zf-form-wrap .zf-ms-tag .rm:hover { opacity: 1; }
+.zf-form-wrap .zf-ms-ph { color: #9ca3af; font-size: 13px; }
+.zf-form-wrap .zf-ms-dd { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: none; }
+.zf-form-wrap .zf-ms-dd.show { display: block; }
+.zf-form-wrap .zf-ms-opt { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+.zf-form-wrap .zf-ms-opt:hover { background: #f3f4f6; }
+.zf-form-wrap .zf-ms-opt.sel { background: rgba(21,42,68,0.1); color: #152a44; }
+.zf-form-wrap .zf-ms-opt .chk { width: 16px; height: 16px; border: 2px solid #d1d5db; border-radius: 3px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+.zf-form-wrap .zf-ms-opt.sel .chk { background: #152a44; border-color: #152a44; }
+.zf-form-wrap .zf-ms-opt.sel .chk::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 600; }
+.zf-form-wrap .zf-yn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.zf-form-wrap .zf-yn-card { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; }
+.zf-form-wrap .zf-yn-card label { font-size: 12px; color: #374151; margin-bottom: 8px; display: block; font-weight: 500; }
+.zf-form-wrap .zf-yn-opts { display: flex; gap: 6px; }
+.zf-form-wrap .zf-yn-btn { flex: 1; padding: 6px 10px; border: 1.5px solid #e5e7eb; border-radius: 6px; background: #fff; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center; color: #374151; }
+.zf-form-wrap .zf-yn-btn:hover { border-color: #152a44; }
+.zf-form-wrap .zf-yn-btn.sel { background: #152a44; color: #fff; border-color: transparent; }
+.zf-form-wrap .zf-actions { display: flex; gap: 10px; justify-content: space-between; padding-top: 20px; border-top: 1px solid #e5e7eb; margin-top: 8px; }
+.zf-form-wrap .zf-btn { padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: inherit; }
+.zf-form-wrap .zf-btn-primary { background: #152a44; color: #fff; box-shadow: 0 4px 14px rgba(21,42,68,0.3); }
+.zf-form-wrap .zf-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(21,42,68,0.4); }
+.zf-form-wrap .zf-btn-back { background: transparent; color: #6b7280; border: 1.5px solid #e5e7eb; }
+.zf-form-wrap .zf-btn-back:hover { background: #f3f4f6; }
+@media (max-width: 600px) { 
+    .zf-form-wrap .zf-grid-2, .zf-form-wrap .zf-grid-3 { grid-template-columns: 1fr; } 
+    .zf-form-wrap .zf-yn-grid { grid-template-columns: 1fr; }
+    .zf-form-wrap .zf-body { padding: 20px; }
+    .zf-form-wrap .zf-step-txt { display: none; }
+}
+.zf-form-wrap select[multiple] { display: none; }
+.zf-form-wrap .zf-checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.zf-form-wrap .zf-checkbox-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; font-size: 12px; color: #374151; }
+.zf-form-wrap .zf-checkbox-item:hover { border-color: #152a44; background: #fff; }
+.zf-form-wrap .zf-checkbox-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #152a44; cursor: pointer; flex-shrink: 0; }
+.zf-form-wrap .zf-checkbox-item input[type="checkbox"]:checked + span { color: #152a44; font-weight: 500; }
+.zf-form-wrap .zf-checkbox-item:has(input:checked) { background: rgba(21,42,68,0.08); border-color: #152a44; }
+@media (max-width: 600px) { .zf-form-wrap .zf-checkbox-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 400px) { .zf-form-wrap .zf-checkbox-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="zf-form-wrap">
+    <div class="zf-container">
+        <div class="zf-body">
+            <!-- Step Indicator -->
+            <div class="zf-steps">
+                <div class="zf-step active" id="zf-s1-ind">
+                    <span class="zf-step-num">1</span>
+                    <span class="zf-step-txt">Your Details</span>
+                </div>
+                <div class="zf-line" id="zf-line"></div>
+                <div class="zf-step" id="zf-s2-ind">
+                    <span class="zf-step-num">2</span>
+                    <span class="zf-step-txt">Background</span>
+                </div>
+            </div>
+
+            <form id="webform23777000001067343" action="https://crm.zohocloud.ca/crm/WebToLeadForm" name="WebToLeads23777000001067343" method="POST" onsubmit="javascript:document.charset='UTF-8'; return zfCheckMandatory()" accept-charset="UTF-8">
+                <!-- Hidden Zoho Fields -->
+                <input type="hidden" name="xnQsjsdp" value="a4603d530bbc9f12c9eff55a10669036b56ab8866ec7fe92fbca5df9d019a702">
+                <input type="hidden" name="zc_gad" id="zc_gad" value="">
+                <input type="hidden" name="xmIwtLD" value="31bd49fd011476967e7b44a956310d137f196e7528ae3b7adc90f597ebe83646016c10a04b51096893ff10e917438eee">
+                <input type="hidden" name="actionType" value="TGVhZHM=">
+                <input type="hidden" name="returnURL" value="https://strivexfinancial.com/thank-you-2/">
+                <input type="hidden" name="aG9uZXlwb3Q" value="">
+
+                <!-- STEP 1 -->
+                <div class="zf-panel active" id="zf-step1">
+                    <div class="zf-section">
+                        <div class="zf-title">Personal Information</div>
+                        <div class="zf-grid-2">
+                            <div class="zf-field">
+                                <label>First Name <span class="req">*</span></label>
+                                <input type="text" id="zf-firstname" name="First Name" placeholder="" maxlength="40" required>
+                            </div>
+                            <div class="zf-field">
+                                <label>Last Name <span class="req">*</span></label>
+                                <input type="text" id="zf-lastname" name="Last Name" placeholder="" maxlength="80" required>
+                            </div>
+                            <div class="zf-field">
+                                <label>Email <span class="req">*</span></label>
+                                <input type="email" id="zf-email" name="Email" ftype="email" placeholder="" maxlength="100" required>
+                            </div>
+                            <div class="zf-field">
+                                <label>Phone <span class="req">*</span></label>
+                                <input type="tel" id="zf-phone" name="Phone" placeholder="" maxlength="30" required>
+                            </div>
+                            <div class="zf-field">
+                                <label>City <span class="req">*</span></label>
+                                <input type="text" id="zf-city" name="City" placeholder="" maxlength="100" required>
+                            </div>
+                            <div class="zf-field">
+                                <label>Province <span class="req">*</span></label>
+                                <input type="text" id="zf-province" name="State" placeholder="" maxlength="100" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zf-section">
+                        <div class="zf-title">Financing Details</div>
+                        <!-- Row 1: Borrow + Condition -->
+                        <div class="zf-grid-2">
+                            <div class="zf-field">
+                                <label>How Much Would You Like To Borrow? <span class="req">*</span></label>
+                                <select name="LEADCF8">
+                                    <option value="-None-">Select...</option>
+                                    <option value="$5,000 - $50,000">$5K - $50K</option>
+                                    <option value="$50,000 - $100,000">$50K - $100K</option>
+                                    <option value="$100,000 - $500,000">$100K - $500K</option>
+                                    <option value="$500,000 - $1M">$500K - $1M</option>
+                                    <option value="Over $1M">Over $1M</option>
+                                </select>
+                            </div>
+                            <div class="zf-field">
+                                <label>Preferred Condition <span class="req">*</span></label>
+                                <select name="LEADCF16">
+                                    <option value="-None-">Select...</option>
+                                    <option value="New">New</option>
+                                    <option value="Used">Used</option>
+                                    <option value="No Preference">No Preference</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Row 1.5: Make/Model/Year input -->
+                        <div style="margin-top: 14px;">
+                            <div class="zf-field">
+                                <input type="text" name="LEADCF9" placeholder="If you know exactly what you need, enter the MAKE, MODEL and/or YEAR of the equipment" maxlength="255">
+                            </div>
+                        </div>
+
+
+                         <!-- Equipment Type as visible checkboxes -->
+                        <div style="margin-top: 14px;">
+                            <div class="zf-field">
+                                <label>What type of equipment are you looking to finance? <span class="req">*</span></label>
+                                <div class="zf-checkbox-grid">
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Agriculture & Farming Equipment"><span>Agriculture & Farming</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Buses & Coach Buses"><span>Buses & Coach</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Construction Equipment"><span>Construction</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Dental Equipment"><span>Dental</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Forestry Equipment"><span>Forestry</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Gym Equipment"><span>Gym</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Lifting Equipment"><span>Lifting</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Manufacturing Equipment"><span>Manufacturing</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Medical Equipment"><span>Medical</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Office & Computer Equipment"><span>Office & Computer</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Restaurant Equipment"><span>Restaurant</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Retail Store Equipment"><span>Retail Store</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Spa or Salon"><span>Spa or Salon</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Transportation Equipment"><span>Transportation</span></label>
+                                    <label class="zf-checkbox-item"><input type="checkbox" name="LEADCF5" value="Trucks & Trailers"><span>Trucks & Trailers</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zf-actions">
+                        <div></div>
+                        <button type="button" class="zf-btn zf-btn-primary" onclick="zfNextStep()">Continue →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div class="zf-panel" id="zf-step2">
+                    <!-- Business & Equipment Section (moved from Step 1) -->
+                    <div class="zf-section">
+                        <div class="zf-title">Business & Equipment Details</div>
+                        <div class="zf-grid-2">
+                            <div class="zf-field">
+                                <label>Is This For a Business or Personal? <span class="req">*</span></label>
+                                <select name="LEADCF15">
+                                    <option value="-None-">Select...</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Personal">Personal</option>
+                                </select>
+                            </div>
+                            <div class="zf-field">
+                                <label>If for a business, please enter a legal business name</label>
+                                <input type="text" name="LEADCF4" placeholder="Legal Business Name" maxlength="255">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zf-section">
+                        <div class="zf-title">Financial Background</div>
+                        <div class="zf-yn-grid">
+                            <div class="zf-yn-card">
+                                <label>Have You Had Any Prior Repossessions? <span class="req">*</span></label>
+                                <div class="zf-yn-opts">
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn1" data-val="Yes">Yes</button>
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn1" data-val="No">No</button>
+                                </div>
+                                <select id="zf-yn1" name="LEADCF10" style="display:none;"><option value="-None-">-None-</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                            </div>
+                            <div class="zf-yn-card">
+                                <label>Are you currently in any Debt Management program? <span class="req">*</span></label>
+                                <div class="zf-yn-opts">
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn2" data-val="Yes">Yes</button>
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn2" data-val="No">No</button>
+                                </div>
+                                <select id="zf-yn2" name="LEADCF12" style="display:none;"><option value="-None-">-None-</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                            </div>
+                            <div class="zf-yn-card">
+                                <label>Do you have any outstanding loans that are in collections? <span class="req">*</span></label>
+                                <div class="zf-yn-opts">
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn3" data-val="Yes">Yes</button>
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn3" data-val="No">No</button>
+                                </div>
+                                <select id="zf-yn3" name="LEADCF11" style="display:none;"><option value="-None-">-None-</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                            </div>
+                            <div class="zf-yn-card">
+                                <label>Are you currently under an undischarged bankruptcy or consumer proposal? <span class="req">*</span></label>
+                                <div class="zf-yn-opts">
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn4" data-val="Yes">Yes</button>
+                                    <button type="button" class="zf-yn-btn" data-fld="zf-yn4" data-val="No">No</button>
+                                </div>
+                                <select id="zf-yn4" name="LEADCF14" style="display:none;"><option value="-None-">-None-</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                            </div>
+                        </div>
+                        <div class="zf-grid" style="margin-top: 14px;">
+                            <div class="zf-field">
+                                <label>How good is your credit score? <span class="req">*</span></label>
+                                <select name="LEADCF13">
+                                    <option value="-None-">Select your credit score...</option>
+                                    <option value="Fair (560-659)">Fair (560-659)</option>
+                                    <option value="Good (660-724)">Good (660-724)</option>
+                                    <option value="Very Good (725-759)">Very Good (725-759)</option>
+                                    <option value="Excellent (760-900)">Excellent (760-900)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms Checkbox -->
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 12px; color: #374151; cursor: pointer;">
+                            <input type="checkbox" id="zf-terms" name="terms_accepted" required style="margin-top: 2px; width: 16px; height: 16px; accent-color: #152a44; cursor: pointer;">
+                            <span>By submitting this form you are agreeing to the smarter.loans <a href="https://smarter.loans/privacy-policy/" target="_blank" style="color: #152a44; text-decoration: underline;">privacy policy</a> and <a href="https://smarter.loans/terms-and-conditions/" target="_blank" style="color: #152a44; text-decoration: underline;">terms and conditions</a> <span class="req">*</span></span>
+                        </label>
+                    </div>
+
+                    <div class="zf-actions">
+                        <button type="button" class="zf-btn zf-btn-back" onclick="zfPrevStep()">← Back</button>
+                        <button type="submit" id="zf-submit" class="zf-btn zf-btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src='https://crm.zohocloud.ca/crm/javascript/zcga.js'> </script>
+
+<script>
+(function(){
+    // Yes/No buttons
+    document.querySelectorAll('.zf-yn-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fld = this.getAttribute('data-fld');
+            var val = this.getAttribute('data-val');
+            this.parentElement.querySelectorAll('.zf-yn-btn').forEach(function(b){ b.classList.remove('sel'); });
+            this.classList.add('sel');
+            document.getElementById(fld).value = val;
+        });
+    });
+
+    // Step navigation
+    window.zfNextStep = function() {
+        var fn = document.getElementById('zf-firstname').value.trim();
+        var ln = document.getElementById('zf-lastname').value.trim();
+        var em = document.getElementById('zf-email').value.trim();
+        var ph = document.getElementById('zf-phone').value.trim();
+        var ct = document.getElementById('zf-city').value.trim();
+        var pv = document.getElementById('zf-province').value.trim();
+        
+        if (!fn) { alert('First Name is required.'); document.getElementById('zf-firstname').focus(); return; }
+        if (!ln) { alert('Last Name is required.'); document.getElementById('zf-lastname').focus(); return; }
+        if (!em) { alert('Email is required.'); document.getElementById('zf-email').focus(); return; }
+        if (!ph) { alert('Phone is required.'); document.getElementById('zf-phone').focus(); return; }
+        if (!ct) { alert('City is required.'); document.getElementById('zf-city').focus(); return; }
+        if (!pv) { alert('Province is required.'); document.getElementById('zf-province').focus(); return; }
+        
+        // Validate email format
+        var at = em.indexOf('@'), dot = em.lastIndexOf('.');
+        if (at < 1 || dot < at + 2 || dot + 2 >= em.length) { alert('Please enter a valid email.'); document.getElementById('zf-email').focus(); return; }
+        
+        document.getElementById('zf-step1').classList.remove('active');
+        document.getElementById('zf-step2').classList.add('active');
+        document.getElementById('zf-s1-ind').classList.remove('active');
+        document.getElementById('zf-s1-ind').classList.add('done');
+        document.getElementById('zf-s2-ind').classList.add('active');
+        document.getElementById('zf-line').classList.add('active');
+    };
+
+    window.zfPrevStep = function() {
+        document.getElementById('zf-step2').classList.remove('active');
+        document.getElementById('zf-step1').classList.add('active');
+        document.getElementById('zf-s2-ind').classList.remove('active');
+        document.getElementById('zf-s1-ind').classList.remove('done');
+        document.getElementById('zf-s1-ind').classList.add('active');
+        document.getElementById('zf-line').classList.remove('active');
+    };
+
+    // Validation
+    window.zfCheckMandatory = function() {
+        var fn = document.getElementById('zf-firstname').value.trim();
+        var ln = document.getElementById('zf-lastname').value.trim();
+        var em = document.getElementById('zf-email').value.trim();
+        var ph = document.getElementById('zf-phone').value.trim();
+        
+        if (!fn) { alert('First Name is required.'); return false; }
+        if (!ln) { alert('Last Name is required.'); return false; }
+        if (!em) { alert('Email is required.'); return false; }
+        if (!ph) { alert('Phone is required.'); return false; }
+        
+        // Validate email format
+        var at = em.indexOf('@'), dot = em.lastIndexOf('.');
+        if (at < 1 || dot < at + 2 || dot + 2 >= em.length) { alert('Please enter a valid email.'); return false; }
+        
+        document.getElementById('zf-submit').disabled = true;
+        return true;
+    };
+})();
+</script>
