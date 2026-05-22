@@ -984,6 +984,92 @@ export async function sendDashboardGeneratedEmail(
   });
 }
 
+// 10. Waitlist Confirmation Email
+export async function sendWaitlistConfirmationEmail(
+  email: string
+): Promise<void> {
+  const content = `
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #7a71eb 0%, #6366f1 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 12px; line-height: 1.3;">
+        You're on the List!
+      </h1>
+      <p style="color: #6b7280; font-size: 16px; margin: 0; line-height: 1.6;">
+        Thank you for joining the ${COMPANY_NAME} waitlist.<br/>We'll notify you as soon as we launch.
+      </p>
+    </div>
+
+    <div style="background: linear-gradient(135deg, #7a71eb 0%, #6366f1 100%); border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 32px;">
+      <h2 style="color: white; font-size: 20px; font-weight: 600; margin: 0 0 12px 0;">
+        🚀 Launching May 30, 2026
+      </h2>
+      <p style="color: rgba(255,255,255,0.9); font-size: 15px; margin: 0;">
+        Be among the first to experience the future of marketing analytics
+      </p>
+    </div>
+
+    <div style="background: #f8fafc; border-radius: 16px; padding: 28px; margin-bottom: 28px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #111827; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 24px;">✨</span> What to Expect
+      </h3>
+      <div style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+        <div style="width: 24px; height: 24px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <p style="color: #1f2937; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">All Your Data in One Place</p>
+          <p style="color: #6b7280; font-size: 14px; margin: 0;">Connect Facebook, Instagram, TikTok, Google Ads and more</p>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+        <div style="width: 24px; height: 24px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <p style="color: #1f2937; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">Beautiful Dashboards</p>
+          <p style="color: #6b7280; font-size: 14px; margin: 0;">Real-time analytics with stunning visualizations</p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <div style="width: 24px; height: 24px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <p style="color: #1f2937; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">AI-Powered Insights</p>
+          <p style="color: #6b7280; font-size: 14px; margin: 0;">Smart recommendations to optimize your marketing</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 20px 0;">
+      <p style="color: #6b7280; font-size: 14px; margin: 0;">
+        We'll send you an email the moment we're live.<br/>
+        In the meantime, follow us for updates and sneak peeks.
+      </p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `You're on the ${COMPANY_NAME} Waitlist! 🎉`,
+    html: createEmailTemplate(content, {
+      headerText: 'Welcome to the Waitlist',
+      accentColor: '#7a71eb'
+    }),
+  });
+}
+
 // Verify SMTP connection
 export async function verifyEmailConnection(): Promise<boolean> {
   try {

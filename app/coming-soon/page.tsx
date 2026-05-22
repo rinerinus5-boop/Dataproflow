@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Rocket, Mail, CheckCircle, Loader2 } from "lucide-react";
 
-const LAUNCH_DATE = new Date("2026-06-15T00:00:00");
+const LAUNCH_DATE = new Date("2026-05-30T00:00:00");
 
 interface TimeLeft {
   days: number;
@@ -187,12 +187,9 @@ export default function ComingSoonPage() {
           </div>
 
           {/* Footer info */}
-          <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-center text-sm text-gray-500">
             <span>
-              {((Date.now() - new Date("2026-01-01").getTime()) / (LAUNCH_DATE.getTime() - new Date("2026-01-01").getTime()) * 100).toFixed(1)}% complete
-            </span>
-            <span>
-              Launch: {LAUNCH_DATE.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              Launch: {LAUNCH_DATE.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
             </span>
           </div>
         </div>
