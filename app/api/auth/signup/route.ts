@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
+    // Check if Supabase env vars are configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error. Please contact support." },
+        { status: 500 }
+      );
+    }
+
     const { email, password, fullName } = await request.json();
 
     if (!email || !password) {
@@ -21,11 +30,12 @@ export async function POST(request: Request) {
         data: {
           full_name: fullName,
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://dataproflow.vercel.app"}/auth/callback`,
       },
     });
 
     if (error) {
+      console.error("Supabase signup error:", error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
@@ -36,7 +46,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
       { status: 500 }
     );
   }

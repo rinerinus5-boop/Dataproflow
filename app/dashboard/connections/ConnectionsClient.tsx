@@ -212,10 +212,11 @@ export default function ConnectionsClient({
       : "Account";
 
     try {
-      const res = await fetch("/api/connections/sync", {
+      // Use Windsor.ai sync endpoint
+      const res = await fetch("/api/windsor/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionId }),
+        body: JSON.stringify({ platform: account?.platform || "all" }),
       });
 
       if (res.ok) {
@@ -223,7 +224,7 @@ export default function ConnectionsClient({
         showToast(
           "success",
           `${platformName} synced!`,
-          `${data.recordsSynced ?? 0} record${data.recordsSynced === 1 ? "" : "s"} updated.`
+          `${data.recordsSynced ?? 0} record${data.recordsSynced === 1 ? "" : "s"} fetched.`
         );
         router.refresh();
       } else {
@@ -239,7 +240,7 @@ export default function ConnectionsClient({
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!confirm("Are you sure you want to disconnect this account?")) return;
+    if (!confirm("Are you sure you want to disconnect this account? You'll need to reconnect it on Windsor.ai to restore access.")) return;
 
     const account = connectedAccounts.find((a) => a.id === connectionId);
     const platformName = account?.platform
@@ -248,22 +249,13 @@ export default function ConnectionsClient({
 
     setDisconnectingId(connectionId);
     try {
-      const res = await fetch("/api/connections/disconnect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionId }),
-      });
-
-      if (res.ok) {
-        setConnectedAccounts((prev) =>
-          prev.filter((acc) => acc.id !== connectionId)
-        );
-        showToast("info", `${platformName} disconnected`, "The account has been removed.");
-        router.refresh();
-      } else {
-        const data = await res.json();
-        showToast("error", "Disconnect failed", data.error || "Failed to disconnect account.");
-      }
+      // Windsor.ai manages disconnections - we just remove from local state
+      // User would need to disconnect from Windsor dashboard for full removal
+      setConnectedAccounts((prev) =>
+        prev.filter((acc) => acc.id !== connectionId)
+      );
+      showToast("info", `${platformName} hidden`, "To fully disconnect, visit Windsor.ai dashboard.");
+      router.refresh();
     } catch (err) {
       console.error("Disconnect error:", err);
       showToast("error", "Disconnect failed", "An unexpected error occurred.");

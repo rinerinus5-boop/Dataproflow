@@ -86,10 +86,12 @@ export async function queryWindsor<T = Record<string, unknown>>(
 
 // ─── Generate co-user authorization link ─────────────────────────────────────
 export async function generateAuthLink(
-  allowedSource?: string
+  allowedSource?: string,
+  redirectUrl?: string
 ): Promise<{ url: string }> {
   const params = new URLSearchParams({ api_key: WINDSOR_API_KEY });
   if (allowedSource) params.set("allowed_sources", allowedSource);
+  if (redirectUrl) params.set("redirect_url", redirectUrl);
 
   const url = `${ONBOARD_URL}/api/team/generate-co-user-url/?${params.toString()}`;
   const response = await fetch(url, { method: "GET" });

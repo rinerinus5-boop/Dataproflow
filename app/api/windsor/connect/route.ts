@@ -12,7 +12,7 @@ const ALLOWED_SOURCES = new Set([
  * GET /api/windsor/connect?source=facebook
  * Returns a Windsor.ai co-user authorization URL for the given source.
  * The user is redirected to this URL to connect their account.
- * After connecting, Windsor stores the account under the DataProFlow API key.
+ * After connecting, Windsor redirects back to DataProFlow.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +28,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: `Unsupported source: ${source}` }, { status: 400 });
     }
 
-    const result = await generateAuthLink(source || undefined);
+    // Redirect back to connections page after Windsor OAuth completes
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dataproflow.vercel.app";
+    const redirectUrl = `${siteUrl}/dashboard/connections?success=${source || "account"}`;
+
+    const result = await generateAuthLink(source || undefined, redirectUrl);
 
     // If caller wants a redirect, do it directly
     const redirect = request.nextUrl.searchParams.get("redirect") === "1";
