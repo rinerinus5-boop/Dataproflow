@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { listLinkedAccounts } from "@/lib/windsor/client";
 import ConnectionsClient from "./ConnectionsClient";
 
 export const metadata = {
@@ -13,11 +14,19 @@ export default async function ConnectionsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: connectedAccounts } = await supabase
-    .from("connected_accounts")
-    .select("id, platform, platform_username, created_at")
-    .eq("user_id", user?.id)
-    .eq("is_active", true);
+  // Fetch Windsor.ai connected accounts
+  let windsorAccounts: { id: string; platform: string; platform_username: string | null; created_at: string }[] = [];
+  try {
+    const linkedAccounts = await listLinkedAccounts();
+    windsorAccounts = linkedAccounts.map((acc) => ({
+      id: acc.id || acc.ds_id,
+      platform: acc.ds_id?.replace("_ads", "") || "unknown",
+      platform_username: acc.name || acc.co_user_member_name || null,
+      created_at: acc.created_at || new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.error("Failed to fetch Windsor accounts:", error);
+  }
 
   const { data: subscription } = await supabase
     .from("subscriptions")
@@ -27,7 +36,7 @@ export default async function ConnectionsPage() {
 
   return (
     <ConnectionsClient
-      connectedAccounts={connectedAccounts || []}
+      connectedAccounts={windsorAccounts}
       subscription={subscription}
     />
   );

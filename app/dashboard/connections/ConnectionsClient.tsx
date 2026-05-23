@@ -99,20 +99,20 @@ interface ConnectionsClientProps {
 
 const availablePlatforms = [
   {
+    id: "facebook",
+    name: "Facebook Ads",
+    description: "Connect your Facebook Ads account",
+    icon: Facebook,
+    color: "bg-blue-600",
+    windsorSource: "facebook",
+  },
+  {
     id: "instagram",
     name: "Instagram",
     description: "Connect your Instagram Business account",
     icon: Instagram,
     color: "bg-gradient-to-br from-purple-500 to-pink-500",
-    connectUrl: "/api/oauth/instagram/connect",
-  },
-  {
-    id: "facebook",
-    name: "Facebook",
-    description: "Connect your Facebook Pages",
-    icon: Facebook,
-    color: "bg-blue-600",
-    connectUrl: "/api/oauth/facebook/connect",
+    windsorSource: "instagram",
   },
   {
     id: "tiktok",
@@ -120,7 +120,7 @@ const availablePlatforms = [
     description: "Connect your TikTok Business account",
     icon: Music2,
     color: "bg-black",
-    connectUrl: "/api/oauth/tiktok/connect",
+    windsorSource: "tiktok",
   },
 ];
 
@@ -187,9 +187,21 @@ export default function ConnectionsClient({
     return connectedAccounts.length < (max as number);
   };
 
-  const handleConnect = (connectUrl: string) => {
-    // Redirect to OAuth flow
-    window.location.href = connectUrl;
+  const handleConnect = async (windsorSource: string) => {
+    // Get Windsor.ai auth URL and redirect
+    try {
+      const res = await fetch(`/api/windsor/connect?source=${windsorSource}`);
+      const data = await res.json();
+      
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        showToast("error", "Connection failed", "Could not get authorization URL. Please try again.");
+      }
+    } catch (err) {
+      console.error("Connect error:", err);
+      showToast("error", "Connection failed", "An unexpected error occurred.");
+    }
   };
 
   const handleSync = async (connectionId: string) => {
@@ -430,7 +442,7 @@ export default function ConnectionsClient({
                 ) : canAddMore() ? (
                   <button
                     type="button"
-                    onClick={() => handleConnect(platform.connectUrl)}
+                    onClick={() => handleConnect(platform.windsorSource)}
                     className="w-full py-2 px-4 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />

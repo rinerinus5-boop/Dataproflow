@@ -4,6 +4,7 @@ const ONBOARD_URL = "https://onboard.windsor.ai";
 
 // ─── Supported connectors ────────────────────────────────────────────────────
 export const CONNECTORS = {
+  ALL: "all",                    // Aggregates all connected sources
   FACEBOOK: "facebook",
   INSTAGRAM: "instagram",
   TIKTOK: "tiktok",
