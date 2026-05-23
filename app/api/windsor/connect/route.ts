@@ -28,11 +28,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: `Unsupported source: ${source}` }, { status: 400 });
     }
 
-    // Redirect back to connections page after Windsor OAuth completes
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://dataproflow.vercel.app";
-    const redirectUrl = `${siteUrl}/dashboard/connections?success=${source || "account"}`;
-
-    const result = await generateAuthLink(source || undefined, redirectUrl);
+    // Note: Windsor.ai doesn't support custom redirect URLs
+    // User will need to return to DataProFlow manually after authorization
+    const result = await generateAuthLink(source || undefined);
 
     // If caller wants a redirect, do it directly
     const redirect = request.nextUrl.searchParams.get("redirect") === "1";

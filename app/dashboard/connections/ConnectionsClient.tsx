@@ -188,13 +188,24 @@ export default function ConnectionsClient({
   };
 
   const handleConnect = async (windsorSource: string) => {
+    // Show instruction before redirecting
+    const confirmed = confirm(
+      "You'll be redirected to authorize your account.\n\n" +
+      "After clicking 'Finish', please return to this page manually.\n\n" +
+      "Click OK to continue."
+    );
+    
+    if (!confirmed) return;
+
     // Get Windsor.ai auth URL and redirect
     try {
       const res = await fetch(`/api/windsor/connect?source=${windsorSource}`);
       const data = await res.json();
       
       if (data.auth_url) {
-        window.location.href = data.auth_url;
+        // Open in new tab so user can easily return
+        window.open(data.auth_url, "_blank");
+        showToast("info", "Authorization started", "Complete the authorization in the new tab, then refresh this page.");
       } else {
         showToast("error", "Connection failed", "Could not get authorization URL. Please try again.");
       }
