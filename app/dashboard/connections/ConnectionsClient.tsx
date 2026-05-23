@@ -15,6 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  ArrowRight,
+  Shield,
 } from "lucide-react";
 
 // ── Toast ────────────────────────────────────────────────────────────────────
@@ -187,47 +189,68 @@ export default function ConnectionsClient({
     return connectedAccounts.length < (max as number);
   };
 
-  const handleConnect = async (windsorSource: string) => {
-    // Show instruction before redirecting
-    const confirmed = confirm(
-      "You'll be redirected to authorize your account.\n\n" +
-      "After clicking 'Finish', please return to this page manually.\n\n" +
-      "Click OK to continue."
-    );
-    
-    if (!confirmed) return;
+  // Modal state for connect flow
+  const [connectModal, setConnectModal] = useState<{ open: boolean; platform: typeof availablePlatforms[0] | null; loading: boolean }>({
+    open: false,
+    platform: null,
+    loading: false,
+  });
 
-    // Get Windsor.ai auth URL and redirect
+  const openConnectModal = (platform: typeof availablePlatforms[0]) => {
+    setConnectModal({ open: true, platform, loading: false });
+  };
+
+  const closeConnectModal = () => {
+    setConnectModal({ open: false, platform: null, loading: false });
+  };
+
+  const handleConnectConfirm = async () => {
+    if (!connectModal.platform) return;
+    
+    setConnectModal(prev => ({ ...prev, loading: true }));
+    
     try {
-      const res = await fetch(`/api/windsor/connect?source=${windsorSource}`);
+      const res = await fetch(`/api/windsor/connect?source=${connectModal.platform.windsorSource}`);
       const data = await res.json();
       
       if (data.auth_url) {
         // Open in new tab so user can easily return
         window.open(data.auth_url, "_blank");
+        closeConnectModal();
         showToast("info", "Authorization started", "Complete the authorization in the new tab, then refresh this page.");
       } else {
         showToast("error", "Connection failed", "Could not get authorization URL. Please try again.");
+        setConnectModal(prev => ({ ...prev, loading: false }));
       }
     } catch (err) {
       console.error("Connect error:", err);
       showToast("error", "Connection failed", "An unexpected error occurred.");
+      setConnectModal(prev => ({ ...prev, loading: false }));
     }
   };
 
   const handleSync = async (connectionId: string) => {
     setSyncingId(connectionId);
     const account = connectedAccounts.find((a) => a.id === connectionId);
-    const platformName = account?.platform
-      ? account.platform.charAt(0).toUpperCase() + account.platform.slice(1)
-      : "Account";
+    
+    // Map platform to Windsor connector name
+    let windsorConnector = "all";
+    if (account?.platform) {
+      const p = account.platform.toLowerCase();
+      if (p.includes("facebook")) windsorConnector = "facebook";
+      else if (p.includes("instagram")) windsorConnector = "instagram";
+      else if (p.includes("tiktok")) windsorConnector = "tiktok";
+      else if (p !== "unknown") windsorConnector = p;
+    }
+    
+    const platformName = account?.platform_username || windsorConnector.charAt(0).toUpperCase() + windsorConnector.slice(1);
 
     try {
-      // Use Windsor.ai sync endpoint
+      // Use Windsor.ai sync endpoint with correct connector name
       const res = await fetch("/api/windsor/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: account?.platform || "all" }),
+        body: JSON.stringify({ platform: windsorConnector }),
       });
 
       if (res.ok) {
@@ -251,22 +274,28 @@ export default function ConnectionsClient({
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!confirm("Are you sure you want to disconnect this account? You'll need to reconnect it on Windsor.ai to restore access.")) return;
-
     const account = connectedAccounts.find((a) => a.id === connectionId);
-    const platformName = account?.platform
-      ? account.platform.charAt(0).toUpperCase() + account.platform.slice(1)
-      : "Account";
+    const platformName = account?.platform_username || account?.platform || "Account";
 
     setDisconnectingId(connectionId);
     try {
-      // Windsor.ai manages disconnections - we just remove from local state
-      // User would need to disconnect from Windsor dashboard for full removal
-      setConnectedAccounts((prev) =>
-        prev.filter((acc) => acc.id !== connectionId)
-      );
-      showToast("info", `${platformName} hidden`, "To fully disconnect, visit Windsor.ai dashboard.");
-      router.refresh();
+      // Call Windsor API to disconnect
+      const res = await fetch("/api/windsor/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId: connectionId }),
+      });
+
+      if (res.ok) {
+        setConnectedAccounts((prev) =>
+          prev.filter((acc) => acc.id !== connectionId)
+        );
+        showToast("success", `${platformName} disconnected`, "The account has been removed.");
+        router.refresh();
+      } else {
+        const data = await res.json();
+        showToast("error", "Disconnect failed", data.error || "Failed to disconnect. Please try again.");
+      }
     } catch (err) {
       console.error("Disconnect error:", err);
       showToast("error", "Disconnect failed", "An unexpected error occurred.");
@@ -445,7 +474,7 @@ export default function ConnectionsClient({
                 ) : canAddMore() ? (
                   <button
                     type="button"
-                    onClick={() => handleConnect(platform.windsorSource)}
+                    onClick={() => openConnectModal(platform)}
                     className="w-full py-2 px-4 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -512,6 +541,105 @@ export default function ConnectionsClient({
       )}
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Connect Modal */}
+      {connectModal.open && connectModal.platform && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeConnectModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+            {/* Header */}
+            <div className={`${connectModal.platform.color} p-6 text-white`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <connectModal.platform.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Connect {connectModal.platform.name}</h3>
+                    <p className="text-white/80 text-sm">Authorize access to your account</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeConnectModal}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-blue-600 font-bold text-sm">1</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Authorize Access</p>
+                    <p className="text-sm text-gray-500">You&apos;ll be redirected to authorize your {connectModal.platform.name} account</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-blue-600 font-bold text-sm">2</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Select Accounts</p>
+                    <p className="text-sm text-gray-500">Choose which accounts to connect to DataProFlow</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-blue-600 font-bold text-sm">3</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Return Here</p>
+                    <p className="text-sm text-gray-500">After clicking &quot;Finish&quot;, close the tab and refresh this page</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <Shield className="w-5 h-5 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-800">Your credentials are never stored. We only access the data you authorize.</p>
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="p-6 pt-0 flex gap-3">
+              <button
+                onClick={closeConnectModal}
+                className="flex-1 py-3 px-4 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConnectConfirm}
+                disabled={connectModal.loading}
+                className="flex-1 py-3 px-4 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {connectModal.loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

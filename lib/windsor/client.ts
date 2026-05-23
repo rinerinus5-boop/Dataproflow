@@ -128,9 +128,13 @@ export interface LinkedAccount {
   id: string;
   ds_id: string;
   name?: string;
+  account_id?: string;
+  account_name?: string;
   access_token?: string;
   co_user_member_name?: string;
   created_at?: string;
+  // Windsor may return additional fields
+  [key: string]: unknown;
 }
 
 // ─── Get available fields for a connector ────────────────────────────────────
