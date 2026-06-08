@@ -147,10 +147,28 @@ export default function ConnectionsClient({
   // Auto-refresh when returning from Windsor OAuth
   useEffect(() => {
     if (connected === "true") {
-      showToast("success", "Account connected!", "Your account has been successfully connected. Refreshing...");
-      // Remove the query param and refresh data
-      router.replace("/dashboard/connections");
-      router.refresh();
+      showToast("info", "Syncing connection...", "Please wait while we save your connection.");
+      
+      // Call API to save the new connection from Windsor to our database
+      fetch("/api/windsor/save-connections", { method: "POST" })
+        .then(async (res) => {
+          const data = await res.json();
+          if (res.ok && data.saved > 0) {
+            showToast("success", "Account connected!", `${data.saved} account(s) saved successfully.`);
+          } else if (res.ok) {
+            showToast("success", "Account connected!", "Your account has been connected.");
+          } else {
+            showToast("error", "Connection error", data.error || "Failed to save connection.");
+          }
+          // Refresh to show new connection
+          router.replace("/dashboard/connections");
+          router.refresh();
+        })
+        .catch((err) => {
+          console.error("Save connection error:", err);
+          showToast("error", "Error", "Failed to sync connection. Please refresh.");
+          router.replace("/dashboard/connections");
+        });
     } else if (success) {
       showToast("success", "Success", success);
       router.replace("/dashboard/connections");
