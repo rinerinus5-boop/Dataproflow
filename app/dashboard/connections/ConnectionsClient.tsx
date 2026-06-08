@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -142,6 +142,24 @@ export default function ConnectionsClient({
   // Check for success/error messages from OAuth callback
   const success = searchParams.get("success");
   const error = searchParams.get("error");
+  const connected = searchParams.get("connected");
+
+  // Auto-refresh when returning from Windsor OAuth
+  useEffect(() => {
+    if (connected === "true") {
+      showToast("success", "Account connected!", "Your account has been successfully connected. Refreshing...");
+      // Remove the query param and refresh data
+      router.replace("/dashboard/connections");
+      router.refresh();
+    } else if (success) {
+      showToast("success", "Success", success);
+      router.replace("/dashboard/connections");
+      router.refresh();
+    } else if (error) {
+      showToast("error", "Error", error);
+      router.replace("/dashboard/connections");
+    }
+  }, [connected, success, error, router, showToast]);
 
   const hasPaidPlan = subscription?.status === "active";
   const isTrialing = subscription?.status === "trialing";

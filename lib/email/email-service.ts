@@ -1070,6 +1070,147 @@ export async function sendWaitlistConfirmationEmail(
   });
 }
 
+// 11. Weekly Report Email
+export async function sendWeeklyReportEmail(
+  email: string,
+  name: string,
+  report: {
+    weekOf: string;
+    summary: string;
+    totalSpend: number;
+    totalImpressions: number;
+    totalClicks: number;
+    topPlatform: string;
+    dashboardUrl: string;
+  }
+): Promise<void> {
+  const content = `
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 12px; line-height: 1.3;">
+        Your Weekly Marketing Report
+      </h1>
+      <p style="color: #6b7280; font-size: 16px; margin: 0; line-height: 1.6;">
+        Week of ${report.weekOf} • Hi ${name.split(' ')[0]}, here's how your marketing performed
+      </p>
+    </div>
+
+    <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px; padding: 32px; margin-bottom: 32px; color: white;">
+      <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 20px 0; text-align: center;">
+        Weekly Performance Summary
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+        <div style="text-align: center; background: rgba(255,255,255,0.15); border-radius: 12px; padding: 20px;">
+          <div style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">${report.totalImpressions.toLocaleString()}</div>
+          <div style="font-size: 13px; opacity: 0.9;">Impressions</div>
+        </div>
+        <div style="text-align: center; background: rgba(255,255,255,0.15); border-radius: 12px; padding: 20px;">
+          <div style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">${report.totalClicks.toLocaleString()}</div>
+          <div style="font-size: 13px; opacity: 0.9;">Engagements</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #f0fdf4; border-radius: 16px; padding: 24px; margin-bottom: 28px; border: 1px solid #86efac;">
+      <div style="display: flex; align-items: flex-start;">
+        <div style="width: 32px; height: 32px; background: #22c55e; border-radius: 8px; margin-right: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h4 style="font-size: 15px; font-weight: 600; color: #166534; margin: 0 0 8px 0;">
+            Weekly Insight
+          </h4>
+          <p style="color: #15803d; font-size: 14px; margin: 0; line-height: 1.6;">
+            ${report.summary}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 28px 0; border-top: 1px solid #e5e7eb;">
+      <p style="color: #64748b; font-size: 15px; margin-bottom: 20px; font-weight: 500;">
+        View your full dashboard for detailed analytics
+      </p>
+      <a href="${report.dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 16px 40px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 16px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);">
+        Open Dashboard
+      </a>
+      <p style="color: #94a3b8; font-size: 13px; margin-top: 16px; margin-bottom: 0;">
+        This report was automatically generated • Sent every Monday at 8:00 AM
+      </p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `📊 Your Weekly Marketing Report - Week of ${report.weekOf}`,
+    html: createEmailTemplate(content, {
+      headerText: 'Weekly Report',
+      accentColor: '#6366f1'
+    }),
+  });
+}
+
+// 12. Weekly Reports Ready Notification (Admin)
+export async function sendWeeklyReportsReadyNotification(
+  adminEmail: string,
+  pendingCount: number,
+  weekOf: string,
+  adminUrl: string
+): Promise<void> {
+  const content = `
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 12px; line-height: 1.3;">
+        Weekly Reports Ready for Review
+      </h1>
+      <p style="color: #6b7280; font-size: 16px; margin: 0; line-height: 1.6;">
+        Week of ${weekOf}
+      </p>
+    </div>
+
+    <div style="background: #fef3c7; border-radius: 16px; padding: 32px; margin-bottom: 32px; border: 1px solid #fcd34d;">
+      <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 20px 0; text-align: center; color: #92400e;">
+        ${pendingCount} Report${pendingCount !== 1 ? 's' : ''} Pending Your Approval
+      </h3>
+      <p style="color: #92400e; font-size: 15px; text-align: center; margin: 0; line-height: 1.6;">
+        Weekly email reports have been generated for your users and are ready for your review before sending.
+      </p>
+    </div>
+
+    <div style="text-align: center; padding: 28px 0; border-top: 1px solid #e5e7eb;">
+      <a href="${adminUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 16px 40px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 16px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
+        Review & Approve Reports
+      </a>
+      <p style="color: #94a3b8; font-size: 13px; margin-top: 16px; margin-bottom: 0;">
+        Generated every Monday at 8:00 AM
+      </p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: adminEmail,
+    subject: `⏰ ${pendingCount} Weekly Report${pendingCount !== 1 ? 's' : ''} Ready for Review`,
+    html: createEmailTemplate(content, {
+      headerText: 'Reports Pending',
+      accentColor: '#f59e0b'
+    }),
+  });
+}
+
 // Verify SMTP connection
 export async function verifyEmailConnection(): Promise<boolean> {
   try {
