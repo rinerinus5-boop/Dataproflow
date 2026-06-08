@@ -138,6 +138,7 @@ export default function ConnectionsClient({
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [syncingSubscription, setSyncingSubscription] = useState(false);
+  const [syncingConnections, setSyncingConnections] = useState(false);
 
   // Check for success/error messages from OAuth callback
   const success = searchParams.get("success");
@@ -147,28 +148,7 @@ export default function ConnectionsClient({
   // Auto-refresh when returning from Windsor OAuth
   useEffect(() => {
     if (connected === "true") {
-      showToast("info", "Syncing connection...", "Please wait while we save your connection.");
-      
-      // Call API to save the new connection from Windsor to our database
-      fetch("/api/windsor/save-connections", { method: "POST" })
-        .then(async (res) => {
-          const data = await res.json();
-          if (res.ok && data.saved > 0) {
-            showToast("success", "Account connected!", `${data.saved} account(s) saved successfully.`);
-          } else if (res.ok) {
-            showToast("success", "Account connected!", "Your account has been connected.");
-          } else {
-            showToast("error", "Connection error", data.error || "Failed to save connection.");
-          }
-          // Refresh to show new connection
-          router.replace("/dashboard/connections");
-          router.refresh();
-        })
-        .catch((err) => {
-          console.error("Save connection error:", err);
-          showToast("error", "Error", "Failed to sync connection. Please refresh.");
-          router.replace("/dashboard/connections");
-        });
+      handleSyncConnections();
     } else if (success) {
       showToast("success", "Success", success);
       router.replace("/dashboard/connections");
@@ -178,6 +158,25 @@ export default function ConnectionsClient({
       router.replace("/dashboard/connections");
     }
   }, [connected, success, error, router, showToast]);
+
+  // Auto-sync on page load - silently check for new Windsor connections
+  useEffect(() => {
+    // Only auto-sync if user has 0 connections (might have just connected)
+    if (connectedAccounts.length === 0 && !syncingConnections) {
+      // Silent sync - no toast, just try to fetch
+      fetch("/api/windsor/save-connections", { method: "POST" })
+        .then(async (res) => {
+          const data = await res.json();
+          if (res.ok && data.saved > 0) {
+            showToast("success", "Connection found!", `${data.saved} account(s) synced.`);
+            router.refresh();
+          }
+        })
+        .catch(() => {
+          // Silent fail - user can manually sync if needed
+        });
+    }
+  }, []); // Run once on mount
 
   const hasPaidPlan = subscription?.status === "active";
   const isTrialing = subscription?.status === "trialing";
@@ -203,6 +202,30 @@ export default function ConnectionsClient({
       showToast("error", "Sync failed", "An unexpected error occurred.");
     } finally {
       setSyncingSubscription(false);
+    }
+  };
+
+  // Sync connections from Windsor to our database
+  const handleSyncConnections = async () => {
+    setSyncingConnections(true);
+    try {
+      showToast("info", "Syncing...", "Fetching your connections from Windsor...");
+      const res = await fetch("/api/windsor/save-connections", { method: "POST" });
+      const data = await res.json();
+      
+      if (res.ok && data.saved > 0) {
+        showToast("success", "Success!", `${data.saved} connection(s) synced.`);
+        router.refresh();
+      } else if (res.ok) {
+        showToast("info", "No new connections", "No new accounts found. Try connecting first.");
+      } else {
+        showToast("error", "Sync failed", data.error || "Could not sync connections.");
+      }
+    } catch (err) {
+      console.error("Sync connections error:", err);
+      showToast("error", "Error", "Failed to sync. Please try again.");
+    } finally {
+      setSyncingConnections(false);
     }
   };
 
@@ -390,10 +413,35 @@ export default function ConnectionsClient({
             Connect your marketing platforms to start collecting data.
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          {connectedAccounts.length} / {getMaxConnections()} connections
+        <div className="flex items-center gap-3">
+          {/* Sync button - click after closing Windsor window */}
+          <button
+            onClick={handleSyncConnections}
+            disabled={syncingConnections}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-sm font-medium"
+          >
+            {syncingConnections ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            {syncingConnections ? "Syncing..." : "Sync Connections"}
+          </button>
+          <div className="text-sm text-gray-500">
+            {connectedAccounts.length} / {getMaxConnections()} connections
+          </div>
         </div>
       </div>
+
+      {/* Instructions for new users */}
+      {connectedAccounts.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm text-blue-800">
+            <strong>How to connect:</strong> Click "Connect" below → Authorize on {`Windsor's`} site → 
+            Close their window when done → Click <strong>"Sync Connections"</strong> above to see your account.
+          </p>
+        </div>
+      )}
 
       {/* Connected Accounts */}
       {connectedAccounts.length > 0 && (
