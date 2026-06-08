@@ -85,10 +85,11 @@ export async function queryWindsor<T = Record<string, unknown>>(
 }
 
 // ─── Generate co-user authorization link ─────────────────────────────────────
-// Note: Windsor.ai doesn't support custom redirect URLs after authorization
+// Returns: { url: string, access_token?: string }
+// access_token is ONLY returned for newly created auth links - use it to fetch session-specific accounts
 export async function generateAuthLink(
   allowedSource?: string
-): Promise<{ url: string }> {
+): Promise<{ url: string; access_token?: string }> {
   const params = new URLSearchParams({ api_key: WINDSOR_API_KEY });
   if (allowedSource) params.set("allowed_sources", allowedSource);
 

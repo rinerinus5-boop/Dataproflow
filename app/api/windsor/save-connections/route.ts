@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 
 /**
  * POST /api/windsor/save-connections
- * Fetches accounts from Windsor and saves them to our database
- * Called after OAuth success to sync new connections
+ * Syncs EXISTING user connections with Windsor data
+ * SECURITY: Only updates connections already in our DB - never adds other users' accounts
  */
 export async function POST() {
   try {
@@ -16,7 +16,28 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch accounts from Windsor
+    // Get THIS USER'S existing connections from our database
+    const { data: existingConnections, error: fetchError } = await supabase
+      .from("connected_accounts")
+      .select("id, windsor_account_id, platform, ds_id, platform_username")
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+
+    if (fetchError) {
+      console.error("Failed to fetch existing connections:", fetchError);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
+    // If user has no connections yet, nothing to sync
+    if (!existingConnections || existingConnections.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        message: "No existing connections to sync. Connect an account first.",
+        saved: 0 
+      });
+    }
+
+    // Fetch all accounts from Windsor (team-level API)
     const windsorAccounts = await listLinkedAccounts();
 
     if (!windsorAccounts || windsorAccounts.length === 0) {
@@ -27,82 +48,54 @@ export async function POST() {
       });
     }
 
-    // Get existing connections for this user to avoid duplicates
-    const { data: existingConnections } = await supabase
-      .from("connected_accounts")
-      .select("windsor_account_id, platform")
-      .eq("user_id", user.id)
-      .eq("is_active", true);
-
-    const existingIds = new Set(
-      (existingConnections || []).map(c => c.windsor_account_id)
-    );
-
-    // Save each new connection
-    const savedAccounts = [];
+    // Create a map of Windsor accounts by ID for quick lookup
+    const windsorAccountMap = new Map();
     for (const acc of windsorAccounts) {
       const windsorId = acc.id || acc.account_id;
-      
-      // Skip if already exists
-      if (existingIds.has(windsorId)) {
-        continue;
+      if (windsorId) {
+        windsorAccountMap.set(windsorId, acc);
       }
+    }
 
-      // Determine platform from ds_id
-      let platform = "unknown";
-      const dsId = (acc.ds_id || "").toLowerCase().trim();
+    // Only update EXISTING user connections - NEVER add new ones from Windsor pool
+    // This ensures we never show other users' accounts
+    const updatedAccounts = [];
+    for (const userConn of existingConnections) {
+      const windsorAcc = windsorAccountMap.get(userConn.windsor_account_id);
       
-      if (dsId.includes("tiktok")) {
-        platform = "tiktok";
-      } else if (dsId.includes("instagram")) {
-        platform = "instagram";
-      } else if (dsId.includes("facebook")) {
-        platform = "facebook";
-      } else if (dsId.includes("google_ads")) {
-        platform = "google_ads";
-      } else if (dsId.includes("google_analytics")) {
-        platform = "google_analytics";
-      } else if (dsId.includes("linkedin")) {
-        platform = "linkedin";
-      } else if (dsId.includes("twitter") || dsId.includes("x_ads")) {
-        platform = "twitter";
-      } else if (dsId.includes("snapchat")) {
-        platform = "snapchat";
-      } else if (dsId.includes("pinterest")) {
-        platform = "pinterest";
-      } else if (dsId.includes("youtube")) {
-        platform = "youtube";
-      }
+      if (windsorAcc) {
+        // Update with latest info from Windsor
+        const accountName = windsorAcc.account_name || windsorAcc.name || windsorAcc.co_user_member_name || windsorAcc.user_name || userConn.platform_username;
+        
+        const { data: updated, error: updateError } = await supabase
+          .from("connected_accounts")
+          .update({
+            platform_username: accountName,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", userConn.id)
+          .eq("user_id", user.id) // Extra safety: ensure we only update this user's record
+          .select()
+          .single();
 
-      // Get display name
-      const accountName = acc.account_name || acc.name || acc.co_user_member_name || acc.user_name || null;
-
-      // Insert into database
-      const { data: saved, error: insertError } = await supabase
-        .from("connected_accounts")
-        .insert({
-          user_id: user.id,
-          platform: platform,
-          platform_username: accountName,
-          windsor_account_id: windsorId,
-          ds_id: acc.ds_id,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Failed to save connection:", insertError);
+        if (!updateError && updated) {
+          updatedAccounts.push(updated);
+        }
       } else {
-        savedAccounts.push(saved);
+        // Account no longer exists in Windsor - mark as inactive
+        await supabase
+          .from("connected_accounts")
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq("id", userConn.id)
+          .eq("user_id", user.id);
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Saved ${savedAccounts.length} new connections`,
-      saved: savedAccounts.length,
-      accounts: savedAccounts,
+      message: `Synced ${updatedAccounts.length} connections`,
+      saved: updatedAccounts.length,
+      accounts: updatedAccounts,
     });
   } catch (error) {
     console.error("Save connections error:", error);
