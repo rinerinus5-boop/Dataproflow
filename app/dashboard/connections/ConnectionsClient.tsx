@@ -138,49 +138,21 @@ export default function ConnectionsClient({
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [syncingSubscription, setSyncingSubscription] = useState(false);
-  const [syncingConnections, setSyncingConnections] = useState(false);
 
-  // Check for success/error messages from OAuth callback
+  // Check for success/error messages from URL params
   const success = searchParams.get("success");
   const error = searchParams.get("error");
-  const connected = searchParams.get("connected");
 
-  // Auto-refresh when returning from Windsor OAuth
+  // Handle URL params for success/error messages
   useEffect(() => {
-    if (connected === "true") {
-      // User just authorized - try to claim the new account
-      handleClaimAccount();
-    } else if (success) {
+    if (success) {
       showToast("success", "Success", success);
       router.replace("/dashboard/connections");
-      router.refresh();
     } else if (error) {
       showToast("error", "Error", error);
       router.replace("/dashboard/connections");
     }
-  }, [connected, success, error, router, showToast]);
-
-  // Auto-claim on page load if user has 0 connections (they might have just connected)
-  useEffect(() => {
-    if (connectedAccounts.length === 0 && !syncingConnections) {
-      // Silent attempt to claim - no toast on fail
-      fetch("/api/windsor/claim-account", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: null })
-      })
-        .then(async (res) => {
-          const data = await res.json();
-          if (res.ok && data.account) {
-            showToast("success", "Connection found!", `${data.account.platform} account connected.`);
-            router.refresh();
-          }
-        })
-        .catch(() => {
-          // Silent fail
-        });
-    }
-  }, []); // Run once on mount
+  }, [success, error, router, showToast]);
 
   const hasPaidPlan = subscription?.status === "active";
   const isTrialing = subscription?.status === "trialing";
@@ -206,58 +178,6 @@ export default function ConnectionsClient({
       showToast("error", "Sync failed", "An unexpected error occurred.");
     } finally {
       setSyncingSubscription(false);
-    }
-  };
-
-  // Sync existing connections from Windsor (updates names, etc.)
-  const handleSyncConnections = async () => {
-    setSyncingConnections(true);
-    try {
-      showToast("info", "Syncing...", "Updating your connections...");
-      const res = await fetch("/api/windsor/save-connections", { method: "POST" });
-      const data = await res.json();
-      
-      if (res.ok && data.saved > 0) {
-        showToast("success", "Updated!", `${data.saved} connection(s) updated.`);
-        router.refresh();
-      } else if (res.ok) {
-        showToast("info", "Up to date", "No changes needed.");
-      } else {
-        showToast("error", "Sync failed", data.error || "Could not sync.");
-      }
-    } catch (err) {
-      console.error("Sync connections error:", err);
-      showToast("error", "Error", "Failed to sync. Please try again.");
-    } finally {
-      setSyncingConnections(false);
-    }
-  };
-
-  // Claim a new account from Windsor (finds newest unclaimed account)
-  const handleClaimAccount = async (platform?: string) => {
-    setSyncingConnections(true);
-    try {
-      showToast("info", "Claiming...", "Looking for your new account...");
-      const res = await fetch("/api/windsor/claim-account", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform })
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.account) {
-        showToast("success", "Connected!", `${data.account.platform} account added.`);
-        router.refresh();
-      } else if (data.error) {
-        showToast("error", "Not found", data.error);
-      } else {
-        showToast("error", "Failed", "Could not claim account.");
-      }
-    } catch (err) {
-      console.error("Claim account error:", err);
-      showToast("error", "Error", "Failed to claim. Please try again.");
-    } finally {
-      setSyncingConnections(false);
     }
   };
 
@@ -301,7 +221,7 @@ export default function ConnectionsClient({
     setConnectModal(prev => ({ ...prev, loading: true }));
     
     try {
-      // Step 1: Initialize auth session - get auth URL and access_token
+      // Step 1: Initialize auth session
       const initRes = await fetch("/api/windsor/init-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -310,55 +230,52 @@ export default function ConnectionsClient({
       
       const initData = await initRes.json();
       
-      if (!initRes.ok || !initData.auth_url || !initData.access_token) {
-        showToast("error", "Connection failed", initData.error || "Could not initialize connection.");
+      if (!initRes.ok || !initData.auth_url) {
+        showToast("error", "Connection failed", initData.error || "Could not start connection.");
         setConnectModal(prev => ({ ...prev, loading: false }));
         return;
       }
       
-      // Step 2: Open popup with auth URL
+      // Step 2: Open popup
       const popup = window.open(initData.auth_url, "windsor_auth", "width=800,height=600");
       
       if (!popup) {
-        showToast("error", "Popup blocked", "Please allow popups for this site.");
+        showToast("error", "Popup blocked", "Please allow popups and try again.");
         setConnectModal(prev => ({ ...prev, loading: false }));
         return;
       }
       
       closeConnectModal();
-      showToast("info", "Authorization started", "Complete the authorization in the popup window.");
+      showToast("info", "Authorize your account", "Complete authorization in the popup, then close it.");
       
-      // Step 3: Poll for popup closure
+      // Step 3: Wait for popup to close
       const checkPopup = setInterval(async () => {
         if (popup.closed) {
           clearInterval(checkPopup);
           
-          // Step 4: Complete auth - fetch accounts for this specific session
-          showToast("info", "Finalizing...", "Getting your connected account...");
+          showToast("info", "Saving connection...", "Please wait...");
           
           try {
             const completeRes = await fetch("/api/windsor/complete-auth", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ access_token: initData.access_token }),
+              body: JSON.stringify({ session_token: initData.session_token }),
             });
             
             const completeData = await completeRes.json();
             
             if (completeRes.ok && completeData.accounts?.length > 0) {
-              showToast("success", "Connected!", `${completeData.accounts.length} account(s) added.`);
+              showToast("success", "Connected!", `${completeData.message}`);
               router.refresh();
-            } else if (completeRes.ok) {
-              showToast("info", "No accounts", "No accounts were connected. Please try again.");
             } else {
-              showToast("error", "Failed", completeData.error || "Could not complete connection.");
+              showToast("error", "Connection failed", completeData.error || "Could not save connection.");
             }
           } catch (err) {
             console.error("Complete auth error:", err);
-            showToast("error", "Error", "Failed to finalize connection. Please click 'Refresh & Find'.");
+            showToast("error", "Error", "Something went wrong. Please try again.");
           }
         }
-      }, 1000); // Check every second
+      }, 1000);
       
     } catch (err) {
       console.error("Connect error:", err);
@@ -492,36 +409,11 @@ export default function ConnectionsClient({
             Connect your marketing platforms to start collecting data.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Refresh button - click after closing Windsor window to claim new account */}
-          <button
-            onClick={connectedAccounts.length === 0 ? () => handleClaimAccount() : handleSyncConnections}
-            disabled={syncingConnections}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-sm font-medium"
-          >
-            {syncingConnections ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            {syncingConnections ? "Loading..." : connectedAccounts.length === 0 ? "Refresh & Find" : "Refresh Data"}
-          </button>
-          <div className="text-sm text-gray-500">
-            {connectedAccounts.length} / {getMaxConnections()} connections
-          </div>
+        <div className="text-sm text-gray-500">
+          {connectedAccounts.length} / {getMaxConnections()} connections
         </div>
       </div>
 
-      {/* Instructions for new users */}
-      {connectedAccounts.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-800">
-            <strong>How to connect:</strong> Click "Connect" below → Authorize on {`Windsor's`} site → 
-            Close their window → Click <strong>"Refresh Data"</strong> button above. 
-            <br/><span className="text-blue-600">Your account will be automatically assigned to you only.</span>
-          </p>
-        </div>
-      )}
 
       {/* Connected Accounts */}
       {connectedAccounts.length > 0 && (
