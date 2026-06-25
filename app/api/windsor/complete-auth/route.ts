@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/windsor/complete-auth
- * Completes OAuth by finding the newest Windsor account and assigning to user
+ * Fetches available Windsor accounts for the user to select from
  */
 export async function POST(request: NextRequest) {
   try {
@@ -41,88 +41,62 @@ export async function POST(request: NextRequest) {
     const allAccounts = await listLinkedAccounts();
 
     if (!allAccounts || allAccounts.length === 0) {
-      // Clean up pending
-      await supabase.from("pending_connections").delete().eq("id", pending.id);
       return NextResponse.json({ 
-        error: "No accounts found. Please complete the authorization on Windsor." 
+        error: "No accounts found in your Windsor team. The team may have reached its account limit. Please remove unused accounts in Windsor and try again." 
       }, { status: 404 });
     }
 
-    // Get all already-claimed account IDs from our database (use admin to bypass RLS)
+    // Get all already-claimed account IDs from our database
     const adminSupabase = createAdminClient();
     const { data: allConnections } = await adminSupabase
       .from("connected_accounts")
-      .select("windsor_account_id")
+      .select("windsor_account_id, user_id")
       .eq("is_active", true);
 
-    const claimedIds = new Set((allConnections || []).map(c => c.windsor_account_id));
+    const claimedMap = new Map((allConnections || []).map(c => [c.windsor_account_id, c.user_id]));
 
-    // Find accounts matching the requested platform that aren't claimed
+    // Filter accounts matching the requested platform
     const requestedPlatform = pending.platform.toLowerCase();
-    const matchingUnclaimed = allAccounts.filter(acc => {
-      const windsorId = acc.id || acc.account_id;
-      if (!windsorId || claimedIds.has(windsorId)) return false;
-      
-      const dsId = (acc.ds_id || "").toLowerCase();
-      if (requestedPlatform === "unknown") return true;
-      return dsId.includes(requestedPlatform);
-    });
-
-    // Sort by created_at descending to get newest first
-    matchingUnclaimed.sort((a, b) => {
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-      return dateB - dateA;
-    });
-
-    if (matchingUnclaimed.length === 0) {
-      await supabase.from("pending_connections").delete().eq("id", pending.id);
-      return NextResponse.json({ 
-        error: "No new accounts found. The account may already be connected." 
-      }, { status: 404 });
-    }
-
-    // Take the newest unclaimed account
-    const acc = matchingUnclaimed[0];
-    const windsorId = acc.id || acc.account_id;
-    
-    // Determine platform
-    let platform = pending.platform;
-    const dsId = (acc.ds_id || "").toLowerCase().trim();
-    if (dsId.includes("tiktok")) platform = "tiktok";
-    else if (dsId.includes("instagram")) platform = "instagram";
-    else if (dsId.includes("facebook")) platform = "facebook";
-    else if (dsId.includes("google_ads")) platform = "google_ads";
-    else if (dsId.includes("linkedin")) platform = "linkedin";
-
-    const accountName = acc.account_name || acc.name || acc.co_user_member_name || acc.user_name || null;
-
-    // Save to database
-    const { data: saved, error: insertError } = await supabase
-      .from("connected_accounts")
-      .insert({
-        user_id: user.id,
-        platform: platform,
-        platform_username: accountName,
-        windsor_account_id: windsorId,
-        ds_id: acc.ds_id,
-        is_active: true,
+    const matchingAccounts = allAccounts
+      .map(acc => {
+        const windsorId = acc.id || acc.account_id;
+        const dsId = (acc.ds_id || "").toLowerCase().trim();
+        let platform = requestedPlatform;
+        if (dsId.includes("tiktok")) platform = "tiktok";
+        else if (dsId.includes("instagram")) platform = "instagram";
+        else if (dsId.includes("facebook")) platform = "facebook";
+        else if (dsId.includes("google_ads")) platform = "google_ads";
+        else if (dsId.includes("linkedin")) platform = "linkedin";
+        else if (dsId.includes("snapchat")) platform = "snapchat";
+        else if (dsId.includes("pinterest")) platform = "pinterest";
+        else if (dsId.includes("twitter") || dsId.includes("x_ads")) platform = "twitter";
+        
+        return {
+          ...acc,
+          windsor_account_id: windsorId,
+          platform,
+          account_name: acc.account_name || acc.name || acc.co_user_member_name || acc.user_name || null,
+          claimed_by_user: claimedMap.get(windsorId) === user.id,
+          claimed_by_other: claimedMap.has(windsorId) && claimedMap.get(windsorId) !== user.id,
+        };
       })
-      .select()
-      .single();
+      .filter(acc => {
+        if (requestedPlatform === "unknown") return true;
+        const dsId = (acc.ds_id || "").toLowerCase();
+        return dsId.includes(requestedPlatform) || acc.platform === requestedPlatform;
+      });
 
-    // Clean up pending connection
-    await supabase.from("pending_connections").delete().eq("id", pending.id);
-
-    if (insertError) {
-      console.error("Failed to save connection:", insertError);
-      return NextResponse.json({ error: "Failed to save connection" }, { status: 500 });
+    if (matchingAccounts.length === 0) {
+      return NextResponse.json({ 
+        error: "No accounts found for this platform. The team may have reached its account limit. Please remove unused accounts in Windsor and try again." 
+      }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Connected ${platform} account`,
-      accounts: [saved],
+      accounts: matchingAccounts,
+      pending_id: pending.id,
+      session_token,
     });
   } catch (error) {
     console.error("Complete auth error:", error);

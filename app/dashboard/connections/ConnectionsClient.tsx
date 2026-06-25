@@ -201,18 +201,33 @@ export default function ConnectionsClient({
   };
 
   // Modal state for connect flow
-  const [connectModal, setConnectModal] = useState<{ open: boolean; platform: typeof availablePlatforms[0] | null; loading: boolean }>({
+  const [connectModal, setConnectModal] = useState<{
+    open: boolean;
+    platform: typeof availablePlatforms[0] | null;
+    loading: boolean;
+    accounts: Array<{
+      windsor_account_id: string;
+      account_name: string | null;
+      platform: string;
+      ds_id: string | null;
+      claimed_by_user: boolean;
+      claimed_by_other: boolean;
+    }>;
+    sessionToken: string | null;
+  }>({
     open: false,
     platform: null,
     loading: false,
+    accounts: [],
+    sessionToken: null,
   });
 
   const openConnectModal = (platform: typeof availablePlatforms[0]) => {
-    setConnectModal({ open: true, platform, loading: false });
+    setConnectModal({ open: true, platform, loading: false, accounts: [], sessionToken: null });
   };
 
   const closeConnectModal = () => {
-    setConnectModal({ open: false, platform: null, loading: false });
+    setConnectModal({ open: false, platform: null, loading: false, accounts: [], sessionToken: null });
   };
 
   const handleConnectConfirm = async () => {
@@ -245,7 +260,6 @@ export default function ConnectionsClient({
         return;
       }
       
-      closeConnectModal();
       showToast("info", "Authorize your account", "Complete authorization in the popup, then close it.");
       
       // Step 3: Wait for popup to close
@@ -253,7 +267,7 @@ export default function ConnectionsClient({
         if (popup.closed) {
           clearInterval(checkPopup);
           
-          showToast("info", "Saving connection...", "Please wait...");
+          showToast("info", "Finding accounts...", "Please wait...");
           
           try {
             const completeRes = await fetch("/api/windsor/complete-auth", {
@@ -265,14 +279,28 @@ export default function ConnectionsClient({
             const completeData = await completeRes.json();
             
             if (completeRes.ok && completeData.accounts?.length > 0) {
-              showToast("success", "Connected!", `${completeData.message}`);
-              router.refresh();
+              // Show account picker
+              const availableAccounts = completeData.accounts.filter((acc: any) => !acc.claimed_by_other);
+              if (availableAccounts.length === 1) {
+                // Auto-select if only one account
+                await handleSelectAccount(availableAccounts[0], initData.session_token);
+              } else {
+                setConnectModal(prev => ({
+                  ...prev,
+                  open: true,
+                  loading: false,
+                  accounts: availableAccounts,
+                  sessionToken: initData.session_token,
+                }));
+              }
             } else {
-              showToast("error", "Connection failed", completeData.error || "Could not save connection.");
+              showToast("error", "Connection failed", completeData.error || "Could not find accounts.");
+              setConnectModal(prev => ({ ...prev, loading: false }));
             }
           } catch (err) {
             console.error("Complete auth error:", err);
             showToast("error", "Error", "Something went wrong. Please try again.");
+            setConnectModal(prev => ({ ...prev, loading: false }));
           }
         }
       }, 1000);
@@ -280,6 +308,38 @@ export default function ConnectionsClient({
     } catch (err) {
       console.error("Connect error:", err);
       showToast("error", "Connection failed", "An unexpected error occurred.");
+      setConnectModal(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleSelectAccount = async (account: any, sessionToken: string) => {
+    setConnectModal(prev => ({ ...prev, loading: true }));
+    try {
+      const res = await fetch("/api/windsor/save-selected-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_token: sessionToken,
+          windsor_account_id: account.windsor_account_id,
+          account_name: account.account_name,
+          platform: account.platform,
+          ds_id: account.ds_id,
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        showToast("success", "Connected!", data.message);
+        closeConnectModal();
+        router.refresh();
+      } else {
+        showToast("error", "Connection failed", data.error || "Could not save account.");
+        setConnectModal(prev => ({ ...prev, loading: false }));
+      }
+    } catch (err) {
+      console.error("Save account error:", err);
+      showToast("error", "Error", "Failed to save account.");
       setConnectModal(prev => ({ ...prev, loading: false }));
     }
   };
@@ -632,37 +692,79 @@ export default function ConnectionsClient({
             
             {/* Content */}
             <div className="p-6 space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-blue-600 font-bold text-sm">1</span>
+              {connectModal.accounts.length > 0 ? (
+                // Account picker
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Select the account you authorized on {connectModal.platform.name}:
+                  </p>
+                  {connectModal.accounts.map((acc) => (
+                    <button
+                      key={acc.windsor_account_id}
+                      onClick={() => {
+                        if (!connectModal.sessionToken) return;
+                        handleSelectAccount(acc, connectModal.sessionToken);
+                      }}
+                      disabled={acc.claimed_by_other || connectModal.loading}
+                      className={`w-full text-left p-4 border rounded-xl transition-all flex items-center justify-between
+                        ${acc.claimed_by_other 
+                          ? "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed" 
+                          : "border-gray-200 hover:border-primary hover:bg-primary/5 cursor-pointer"
+                        }
+                      `}
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">{acc.account_name || "Unnamed Account"}</p>
+                        <p className="text-sm text-gray-500">ID: {acc.windsor_account_id}</p>
+                        {acc.claimed_by_user && (
+                          <p className="text-sm text-blue-600 mt-1">Already connected to you</p>
+                        )}
+                        {acc.claimed_by_other && (
+                          <p className="text-sm text-red-600 mt-1">Connected to another user</p>
+                        )}
+                      </div>
+                      {acc.claimed_by_other ? (
+                        <span className="text-xs text-gray-500">Unavailable</span>
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                // Initial connect screen
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-blue-600 font-bold text-sm">1</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Authorize Access</p>
+                      <p className="text-sm text-gray-500">You&apos;ll be redirected to authorize your {connectModal.platform.name} account</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Authorize Access</p>
-                    <p className="text-sm text-gray-500">You&apos;ll be redirected to authorize your {connectModal.platform.name} account</p>
+                  
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-blue-600 font-bold text-sm">2</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Select Account</p>
+                      <p className="text-sm text-gray-500">After authorization, choose which account to connect</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-blue-600 font-bold text-sm">3</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Close Popup</p>
+                      <p className="text-sm text-gray-500">After clicking &quot;Finish&quot;, close the popup and we&apos;ll save your connection</p>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-blue-600 font-bold text-sm">2</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Select Accounts</p>
-                    <p className="text-sm text-gray-500">Choose which accounts to connect to DataProFlow</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-blue-600 font-bold text-sm">3</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Return Here</p>
-                    <p className="text-sm text-gray-500">After clicking &quot;Finish&quot;, close the tab and refresh this page</p>
-                  </div>
-                </div>
-              </div>
+              )}
               
               <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <Shield className="w-5 h-5 text-amber-600 shrink-0" />
@@ -678,20 +780,22 @@ export default function ConnectionsClient({
               >
                 Cancel
               </button>
-              <button
-                onClick={handleConnectConfirm}
-                disabled={connectModal.loading}
-                className="flex-1 py-3 px-4 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {connectModal.loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
+              {connectModal.accounts.length === 0 && (
+                <button
+                  onClick={handleConnectConfirm}
+                  disabled={connectModal.loading}
+                  className="flex-1 py-3 px-4 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {connectModal.loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
