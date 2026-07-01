@@ -278,6 +278,8 @@ export default function ConnectionsClient({
             
             const completeData = await completeRes.json();
             
+            console.log("complete-auth response:", completeData);
+            
             if (completeRes.ok && completeData.accounts?.length > 0) {
               // Show account picker
               const availableAccounts = completeData.accounts.filter((acc: any) => !acc.claimed_by_other);
