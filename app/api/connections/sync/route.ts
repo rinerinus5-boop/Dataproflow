@@ -74,20 +74,27 @@ export async function POST(request: NextRequest) {
         const dsId = connection.ds_id || platform;
 
         try {
-          const fields = platform === "facebook"
-            ? ["date", "spend", "impressions", "clicks", "reach", "frequency", "cpm", "cpc", "ctr"]
+          // Map stored ds_id to correct Windsor connector and fields
+          const isOrganicFacebook = dsId === "facebook_organic" || dsId === "facebook";
+          const isOrganicTikTok = dsId === "tiktok_organic" || dsId === "tiktok";
+          const windsorConnector = isOrganicFacebook ? "facebook_organic"
+            : isOrganicTikTok ? "tiktok_organic"
+            : dsId;
+
+          const fields = isOrganicFacebook
+            ? ["date", "page_fans", "page_impressions", "page_reach", "page_engaged_users", "page_views_total"]
             : platform === "instagram"
             ? ["date", "impressions", "reach", "engagement", "followers_count"]
-            : (platform === "tiktok" && dsId === "tiktok_ads")
-            ? ["date", "spend", "impressions", "clicks", "reach", "cpm", "cpc", "ctr"]
-            : platform === "tiktok"
+            : isOrganicTikTok
             ? ["date", "video_views", "likes", "comments", "shares", "followers_count"]
+            : dsId === "tiktok_ads"
+            ? ["date", "spend", "impressions", "clicks", "reach", "cpm", "cpc", "ctr"]
             : platform === "google_ads"
             ? ["date", "cost", "impressions", "clicks", "conversions", "ctr", "cpc"]
             : ["date", "impressions", "clicks"];
 
           const result = await queryWindsor({
-            connector: dsId,
+            connector: windsorConnector,
             fields,
             date_preset: "last_30d",
             account_id: accountId,

@@ -101,12 +101,12 @@ interface ConnectionsClientProps {
 
 const availablePlatforms = [
   {
-    id: "facebook",
-    name: "Facebook Ads",
-    description: "Connect your Facebook Ads account",
+    id: "facebook_organic",
+    name: "Facebook Page",
+    description: "Connect your Facebook Page (organic)",
     icon: Facebook,
     color: "bg-blue-600",
-    windsorSource: "facebook",
+    windsorSource: "facebook_organic",
   },
   {
     id: "instagram",
@@ -117,12 +117,12 @@ const availablePlatforms = [
     windsorSource: "instagram",
   },
   {
-    id: "tiktok",
+    id: "tiktok_organic",
     name: "TikTok",
-    description: "Connect your TikTok Business account",
+    description: "Connect your TikTok account (organic)",
     icon: Music2,
     color: "bg-black",
-    windsorSource: "tiktok",
+    windsorSource: "tiktok_organic",
   },
 ];
 
@@ -362,13 +362,13 @@ export default function ConnectionsClient({
     setSyncingId(connectionId);
     const account = connectedAccounts.find((a) => a.id === connectionId);
     
-    // Map platform to Windsor connector name
+    // Map platform to display name for toast
     let windsorConnector = "all";
     if (account?.platform) {
       const p = account.platform.toLowerCase();
-      if (p.includes("facebook")) windsorConnector = "facebook";
+      if (p.includes("facebook")) windsorConnector = "facebook_organic";
       else if (p.includes("instagram")) windsorConnector = "instagram";
-      else if (p.includes("tiktok")) windsorConnector = "tiktok";
+      else if (p.includes("tiktok")) windsorConnector = "tiktok_organic";
       else if (p !== "unknown") windsorConnector = p;
     }
     

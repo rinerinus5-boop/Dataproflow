@@ -18,8 +18,9 @@ ALTER TABLE connected_accounts
   ADD CONSTRAINT connected_accounts_platform_check
   CHECK (platform IN (
     'instagram', 'facebook', 'tiktok',
+    'facebook_organic', 'tiktok_organic', 'tiktok_ads',
     'google_ads', 'google_analytics', 'linkedin',
-    'snapchat', 'pinterest', 'twitter', 'tiktok_ads', 'unknown'
+    'snapchat', 'pinterest', 'twitter', 'unknown'
   ));
 
 -- Add index on windsor_account_id for fast lookups

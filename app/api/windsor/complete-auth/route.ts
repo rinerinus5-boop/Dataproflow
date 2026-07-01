@@ -87,11 +87,12 @@ export async function POST(request: NextRequest) {
           // Skip if no account_id or if deactivated
           if (!accountId || acc.is_deactivated || acc.error) continue;
           
-          // Detect platform
+          // Detect platform (map organic connector names to canonical platform names)
           let platform = "unknown";
-          if (datasource.includes("tiktok")) platform = "tiktok";
+          if (datasource === "tiktok_organic" || datasource === "tiktok") platform = "tiktok";
+          else if (datasource === "tiktok_ads") platform = "tiktok";
+          else if (datasource === "facebook_organic" || datasource === "facebook") platform = "facebook";
           else if (datasource.includes("instagram")) platform = "instagram";
-          else if (datasource.includes("facebook")) platform = "facebook";
           else if (datasource.includes("google_ads")) platform = "google_ads";
           else if (datasource.includes("google_analytics")) platform = "google_analytics";
           else if (datasource.includes("linkedin")) platform = "linkedin";
