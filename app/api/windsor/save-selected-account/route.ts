@@ -78,7 +78,12 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("Failed to save selected account:", insertError);
-      return NextResponse.json({ error: "Failed to save connection" }, { status: 500 });
+      return NextResponse.json({ 
+        error: insertError.message,
+        code: insertError.code,
+        details: insertError.details,
+        hint: insertError.hint,
+      }, { status: 500 });
     }
 
     return NextResponse.json({
