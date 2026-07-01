@@ -334,6 +334,18 @@ export default function ConnectionsClient({
       if (res.ok) {
         showToast("success", "Connected!", data.message);
         closeConnectModal();
+        // Add to local state immediately so UI updates without waiting for server refresh
+        if (data.account) {
+          setConnectedAccounts(prev => [
+            {
+              id: data.account.id,
+              platform: data.account.platform,
+              platform_username: data.account.platform_username,
+              created_at: data.account.created_at,
+            },
+            ...prev,
+          ]);
+        }
         router.refresh();
       } else {
         showToast("error", "Connection failed", data.error || "Could not save account.");

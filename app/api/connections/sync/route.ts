@@ -66,6 +66,91 @@ export async function POST(request: NextRequest) {
     try {
       let recordsSynced = 0;
 
+      // Windsor-connected accounts: use Windsor API instead of OAuth
+      if (connection.access_token === "windsor" && connection.windsor_account_id) {
+        const { queryWindsor } = await import("@/lib/windsor/client");
+        const platform = connection.platform;
+        const accountId = connection.windsor_account_id;
+        const dsId = connection.ds_id || platform;
+
+        try {
+          const fields = platform === "facebook"
+            ? ["date", "spend", "impressions", "clicks", "reach", "frequency", "cpm", "cpc", "ctr"]
+            : platform === "instagram"
+            ? ["date", "impressions", "reach", "engagement", "followers_count"]
+            : platform === "tiktok"
+            ? ["date", "impressions", "clicks", "spend", "video_views"]
+            : platform === "google_ads"
+            ? ["date", "cost", "impressions", "clicks", "conversions", "ctr", "cpc"]
+            : ["date", "impressions", "clicks"];
+
+          const result = await queryWindsor({
+            connector: dsId,
+            fields,
+            date_preset: "last_30d",
+            account_id: accountId,
+          });
+
+          const rows = result.data || [];
+
+          // Aggregate totals for platform_metrics
+          let totalImpressions = 0, totalClicks = 0, totalSpend = 0, totalReach = 0;
+          for (const row of rows as any[]) {
+            totalImpressions += Number(row.impressions || 0);
+            totalClicks += Number(row.clicks || 0);
+            totalSpend += Number(row.spend || row.cost || 0);
+            totalReach += Number(row.reach || 0);
+          }
+
+          await adminSupabase.from("platform_metrics").upsert(
+            {
+              connected_account_id: connectionId,
+              user_id: user.id,
+              platform,
+              metric_date: today,
+              total_impressions: totalImpressions,
+              total_reach: totalReach,
+              platform_data: {
+                source: "windsor",
+                account_id: accountId,
+                total_clicks: totalClicks,
+                total_spend: totalSpend,
+                rows_synced: rows.length,
+                sample: rows.slice(0, 3),
+              },
+            },
+            { onConflict: "connected_account_id,metric_date" }
+          );
+          recordsSynced = rows.length;
+        } catch (windsorErr) {
+          console.error("Windsor sync error:", windsorErr);
+          await adminSupabase.from("platform_metrics").upsert(
+            {
+              connected_account_id: connectionId,
+              user_id: user.id,
+              platform,
+              metric_date: today,
+              platform_data: {
+                source: "windsor",
+                error: windsorErr instanceof Error ? windsorErr.message : "Windsor sync failed",
+              },
+            },
+            { onConflict: "connected_account_id,metric_date" }
+          );
+          recordsSynced = 0;
+        }
+
+        if (syncLog) {
+          await adminSupabase.from("sync_logs").update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+            records_synced: recordsSynced,
+          }).eq("id", syncLog.id);
+        }
+
+        return NextResponse.json({ success: true, recordsSynced, platform, data: [] });
+      }
+
       if (connection.platform === "instagram") {
         // Instagram Business insights require instagram_basic + pages_show_list permissions
         // which need Meta App Review. The stored platform_user_id is a Facebook user ID,
