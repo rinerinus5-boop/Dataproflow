@@ -102,24 +102,27 @@ interface ConnectionsClientProps {
 const availablePlatforms = [
   {
     id: "facebook_organic",
+    dbKey: "facebook",
     name: "Facebook Page",
-    description: "Connect your Facebook Page (organic)",
+    description: "Connect your Facebook Page to track posts and engagement.",
     icon: Facebook,
     color: "bg-blue-600",
     windsorSource: "facebook_organic",
   },
   {
     id: "instagram",
+    dbKey: "instagram",
     name: "Instagram",
-    description: "Connect your Instagram Business account",
+    description: "Connect your Instagram Business account.",
     icon: Instagram,
     color: "bg-gradient-to-br from-purple-500 to-pink-500",
     windsorSource: "instagram",
   },
   {
     id: "tiktok_organic",
+    dbKey: "tiktok",
     name: "TikTok",
-    description: "Connect your TikTok account (organic)",
+    description: "Connect your TikTok account to track videos and growth.",
     icon: Music2,
     color: "bg-black",
     windsorSource: "tiktok_organic",
@@ -497,7 +500,7 @@ export default function ConnectionsClient({
           <div className="divide-y divide-gray-100">
             {connectedAccounts.map((account) => {
               const platform = availablePlatforms.find(
-                (p) => p.id === account.platform
+                (p) => p.id === account.platform || p.dbKey === account.platform
               );
               const Icon = platform?.icon || Instagram;
               const isSyncing = syncingId === account.id;
@@ -566,7 +569,7 @@ export default function ConnectionsClient({
           {availablePlatforms.map((platform) => {
             const Icon = platform.icon;
             const isConnected = connectedAccounts.some(
-              (a) => a.platform === platform.id
+              (a) => a.platform === platform.id || a.platform === platform.dbKey
             );
 
             return (
