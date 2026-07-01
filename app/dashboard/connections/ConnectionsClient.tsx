@@ -375,11 +375,10 @@ export default function ConnectionsClient({
     const platformName = account?.platform_username || windsorConnector.charAt(0).toUpperCase() + windsorConnector.slice(1);
 
     try {
-      // Use Windsor.ai sync endpoint with correct connector name
-      const res = await fetch("/api/windsor/sync", {
+      const res = await fetch("/api/connections/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: windsorConnector }),
+        body: JSON.stringify({ connectionId }),
       });
 
       if (res.ok) {

@@ -78,8 +78,10 @@ export async function POST(request: NextRequest) {
             ? ["date", "spend", "impressions", "clicks", "reach", "frequency", "cpm", "cpc", "ctr"]
             : platform === "instagram"
             ? ["date", "impressions", "reach", "engagement", "followers_count"]
+            : (platform === "tiktok" && dsId === "tiktok_ads")
+            ? ["date", "spend", "impressions", "clicks", "reach", "cpm", "cpc", "ctr"]
             : platform === "tiktok"
-            ? ["date", "impressions", "clicks", "spend", "video_views"]
+            ? ["date", "video_views", "likes", "comments", "shares", "followers_count"]
             : platform === "google_ads"
             ? ["date", "cost", "impressions", "clicks", "conversions", "ctr", "cpc"]
             : ["date", "impressions", "clicks"];
