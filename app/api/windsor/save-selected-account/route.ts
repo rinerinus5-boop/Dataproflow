@@ -38,16 +38,15 @@ export async function POST(request: NextRequest) {
 
     // Check if already connected by this user
     const { data: existing } = await supabase
-      .from("connected_accounts")
+      .from("user_connections")
       .select("id")
       .eq("windsor_account_id", windsor_account_id)
       .eq("user_id", user.id)
-      .eq("is_active", true)
       .single();
 
     if (existing) {
       const { data: updated } = await supabase
-        .from("connected_accounts")
+        .from("user_connections")
         .update({ 
           platform_username: account_name,
           platform: platform,
@@ -66,14 +65,13 @@ export async function POST(request: NextRequest) {
 
     // Insert new connection
     const { data: saved, error: insertError } = await supabase
-      .from("connected_accounts")
+      .from("user_connections")
       .insert({
         user_id: user.id,
         platform: platform || "unknown",
         platform_username: account_name,
         windsor_account_id: windsor_account_id,
         ds_id: ds_id,
-        is_active: true,
       })
       .select()
       .single();

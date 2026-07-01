@@ -60,9 +60,8 @@ export async function POST(request: NextRequest) {
     // Get all already-claimed account IDs from our database
     const adminSupabase = createAdminClient();
     const { data: allConnections } = await adminSupabase
-      .from("connected_accounts")
-      .select("windsor_account_id, user_id")
-      .eq("is_active", true);
+      .from("user_connections")
+      .select("windsor_account_id, user_id");
 
     const claimedMap = new Map((allConnections || []).map(c => [c.windsor_account_id, c.user_id]));
 
