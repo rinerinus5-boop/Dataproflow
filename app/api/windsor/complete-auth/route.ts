@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch ALL accounts from Windsor
     const allAccounts = await listLinkedAccounts();
+    console.log("Windsor accounts response:", JSON.stringify(allAccounts, null, 2));
 
     if (!allAccounts || allAccounts.length === 0) {
       return NextResponse.json({ 
@@ -59,8 +60,11 @@ export async function POST(request: NextRequest) {
     const requestedPlatform = pending.platform.toLowerCase();
     const matchingAccounts = allAccounts
       .map(acc => {
-        const windsorId = acc.id || acc.account_id;
-        const dsId = (acc.ds_id || "").toLowerCase().trim();
+        // Windsor returns various field names - try all common ones
+        const windsorId = String(acc.id || acc.account_id || acc.accountId || acc.profile_id || acc.profileId || acc.property_id || acc.propertyId || acc.ds_id || "").trim();
+        const dsId = String(acc.ds_id || "").toLowerCase().trim();
+        const accountName = String(acc.account_name || acc.name || acc.accountName || acc.profile_name || acc.property_name || acc.co_user_member_name || acc.user_name || acc.email || "").trim() || null;
+        
         let platform = requestedPlatform;
         if (dsId.includes("tiktok")) platform = "tiktok";
         else if (dsId.includes("instagram")) platform = "instagram";
@@ -75,14 +79,16 @@ export async function POST(request: NextRequest) {
           ...acc,
           windsor_account_id: windsorId,
           platform,
-          account_name: acc.account_name || acc.name || acc.co_user_member_name || acc.user_name || null,
+          ds_id: acc.ds_id || null,
+          account_name: accountName,
           claimed_by_user: claimedMap.get(windsorId) === user.id,
           claimed_by_other: claimedMap.has(windsorId) && claimedMap.get(windsorId) !== user.id,
         };
       })
       .filter(acc => {
+        if (!acc.windsor_account_id) return false;
         if (requestedPlatform === "unknown") return true;
-        const dsId = (acc.ds_id || "").toLowerCase();
+        const dsId = String(acc.ds_id || "").toLowerCase();
         return dsId.includes(requestedPlatform) || acc.platform === requestedPlatform;
       });
 

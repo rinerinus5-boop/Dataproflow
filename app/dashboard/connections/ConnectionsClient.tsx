@@ -660,7 +660,7 @@ export default function ConnectionsClient({
 
       {/* Connect Modal */}
       {connectModal.open && connectModal.platform && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -668,7 +668,10 @@ export default function ConnectionsClient({
           />
           
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+          <div 
+            className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className={`${connectModal.platform.color} p-6 text-white`}>
               <div className="flex items-center justify-between">
@@ -691,7 +694,7 @@ export default function ConnectionsClient({
             </div>
             
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {connectModal.accounts.length > 0 ? (
                 // Account picker
                 <div className="space-y-3">
@@ -713,9 +716,16 @@ export default function ConnectionsClient({
                         }
                       `}
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">{acc.account_name || "Unnamed Account"}</p>
-                        <p className="text-sm text-gray-500">ID: {acc.windsor_account_id}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">
+                          {acc.account_name || `Account ${acc.windsor_account_id.slice(0, 12)}`}
+                        </p>
+                        <p className="text-sm text-gray-500 font-mono break-all">
+                          ID: {acc.windsor_account_id}
+                        </p>
+                        {acc.ds_id && (
+                          <p className="text-sm text-gray-400">Source: {acc.ds_id}</p>
+                        )}
                         {acc.claimed_by_user && (
                           <p className="text-sm text-blue-600 mt-1">Already connected to you</p>
                         )}
@@ -724,9 +734,9 @@ export default function ConnectionsClient({
                         )}
                       </div>
                       {acc.claimed_by_other ? (
-                        <span className="text-xs text-gray-500">Unavailable</span>
+                        <span className="text-xs text-gray-500 shrink-0 ml-2">Unavailable</span>
                       ) : (
-                        <ArrowRight className="w-5 h-5 text-gray-400" />
+                        <ArrowRight className="w-5 h-5 text-gray-400 shrink-0 ml-2" />
                       )}
                     </button>
                   ))}

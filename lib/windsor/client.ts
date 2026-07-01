@@ -122,7 +122,14 @@ export async function listLinkedAccounts(
   }
 
   const json = await response.json();
-  return Array.isArray(json) ? json : json?.results ?? [];
+  console.log("Windsor co-user-linked-accounts raw response:", JSON.stringify(json, null, 2));
+  
+  if (Array.isArray(json)) return json;
+  if (json?.results) return json.results;
+  if (json?.data) return json.data;
+  if (json?.accounts) return json.accounts;
+  if (json?.items) return json.items;
+  return [];
 }
 
 export interface LinkedAccount {
