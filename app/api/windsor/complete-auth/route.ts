@@ -66,52 +66,73 @@ export async function POST(request: NextRequest) {
 
     const claimedMap = new Map((allConnections || []).map(c => [c.windsor_account_id, c.user_id]));
 
-    // Map ALL accounts - don't filter by platform, let user pick
+    // Windsor returns nested structure: { link: {...}, accounts: [{account_id, account_name, datasource}] }
+    // We need to flatten and extract the real account data
     const requestedPlatform = pending.platform.toLowerCase();
-    const allMappedAccounts = allAccounts.map(acc => {
-      // Log each account for debugging
-      console.log("Processing account:", JSON.stringify(acc));
+    
+    const allMappedAccounts: any[] = [];
+    
+    for (const item of allAccounts) {
+      const link = (item as any).link || {};
+      const nestedAccounts = (item as any).accounts || [];
+      const addedAt = link.issued_at || (item as any).added || (item as any).created_at || "";
       
-      // Windsor returns various field names - try all common ones
-      const windsorId = String(acc.id || acc.account_id || acc.accountId || acc.profile_id || acc.profileId || acc.property_id || acc.propertyId || "").trim();
-      const dsId = String(acc.ds_id || acc.datasource || acc.source || "").toLowerCase().trim();
-      const accountName = String(acc.account_name || acc.name || acc.accountName || acc.profile_name || acc.property_name || acc.co_user_member_name || acc.user_name || acc.email || "").trim() || null;
-      
-      // Detect platform from ds_id
-      let platform = "unknown";
-      if (dsId.includes("tiktok")) platform = "tiktok";
-      else if (dsId.includes("instagram")) platform = "instagram";
-      else if (dsId.includes("facebook")) platform = "facebook";
-      else if (dsId.includes("google_ads")) platform = "google_ads";
-      else if (dsId.includes("google_analytics")) platform = "google_analytics";
-      else if (dsId.includes("linkedin")) platform = "linkedin";
-      else if (dsId.includes("snapchat")) platform = "snapchat";
-      else if (dsId.includes("pinterest")) platform = "pinterest";
-      else if (dsId.includes("twitter") || dsId.includes("x_ads")) platform = "twitter";
-      
-      return {
-        ...acc,
-        windsor_account_id: windsorId || dsId || String(Math.random()).slice(2, 10),
-        platform,
-        ds_id: dsId || null,
-        account_name: accountName,
-        claimed_by_user: claimedMap.get(windsorId) === user.id,
-        claimed_by_other: claimedMap.has(windsorId) && claimedMap.get(windsorId) !== user.id,
-      };
-    });
+      // If there are nested accounts, use those (this is the real data)
+      if (nestedAccounts.length > 0) {
+        for (const acc of nestedAccounts) {
+          const accountId = String(acc.account_id || acc.id || "").trim();
+          const accountName = String(acc.account_name || acc.name || "").trim();
+          const datasource = String(acc.datasource || acc.ds_id || "").toLowerCase();
+          
+          // Skip if no account_id or if deactivated
+          if (!accountId || acc.is_deactivated || acc.error) continue;
+          
+          // Detect platform
+          let platform = "unknown";
+          if (datasource.includes("tiktok")) platform = "tiktok";
+          else if (datasource.includes("instagram")) platform = "instagram";
+          else if (datasource.includes("facebook")) platform = "facebook";
+          else if (datasource.includes("google_ads")) platform = "google_ads";
+          else if (datasource.includes("google_analytics")) platform = "google_analytics";
+          else if (datasource.includes("linkedin")) platform = "linkedin";
+          else if (datasource.includes("snapchat")) platform = "snapchat";
+          else if (datasource.includes("pinterest")) platform = "pinterest";
+          else if (datasource.includes("twitter") || datasource.includes("x_ads")) platform = "twitter";
+          
+          allMappedAccounts.push({
+            windsor_account_id: accountId,
+            account_name: accountName || null,
+            platform,
+            ds_id: datasource,
+            added_at: acc.added || acc.updated || addedAt,
+            claimed_by_user: claimedMap.get(accountId) === user.id,
+            claimed_by_other: claimedMap.has(accountId) && claimedMap.get(accountId) !== user.id,
+          });
+        }
+      }
+    }
+    
+    // Sort by added_at descending (newest first) and limit to 6
+    const sortedAccounts = allMappedAccounts
+      .sort((a, b) => {
+        const dateA = new Date(a.added_at || 0).getTime();
+        const dateB = new Date(b.added_at || 0).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 6);
 
-    console.log("All mapped accounts:", JSON.stringify(allMappedAccounts, null, 2));
+    console.log("Mapped accounts (newest 6):", JSON.stringify(sortedAccounts, null, 2));
 
-    if (allMappedAccounts.length === 0) {
+    if (sortedAccounts.length === 0) {
       return NextResponse.json({ 
-        error: "No accounts found. Windsor returned empty data. Please try again or contact support.",
+        error: "No valid accounts found. Please make sure you completed the authorization in Windsor.",
         debug: { raw_count: allAccounts.length }
       }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      accounts: allMappedAccounts,
+      accounts: sortedAccounts,
       pending_id: pending.id,
       session_token,
     });
