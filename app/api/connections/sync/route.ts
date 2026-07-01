@@ -102,14 +102,29 @@ export async function POST(request: NextRequest) {
 
           const rows = result.data || [];
 
-          // Aggregate totals for platform_metrics
+          // Aggregate all metric columns from Windsor daily rows
           let totalImpressions = 0, totalClicks = 0, totalSpend = 0, totalReach = 0;
+          let totalLikes = 0, totalComments = 0, totalShares = 0, totalViews = 0;
+          let followersCount = 0, postsCount = 0;
+
           for (const row of rows as any[]) {
-            totalImpressions += Number(row.impressions || 0);
+            totalImpressions += Number(row.impressions || row.page_impressions || 0);
             totalClicks += Number(row.clicks || 0);
             totalSpend += Number(row.spend || row.cost || 0);
-            totalReach += Number(row.reach || 0);
+            totalReach += Number(row.reach || row.page_reach || 0);
+            totalLikes += Number(row.likes || row.page_actions_post_reactions_like_total || 0);
+            totalComments += Number(row.comments || 0);
+            totalShares += Number(row.shares || 0);
+            totalViews += Number(row.video_views || row.views || 0);
+            // Followers: take the latest (max) value across rows
+            const rowFollowers = Number(row.followers_count || row.page_fans || row.followers || 0);
+            if (rowFollowers > followersCount) followersCount = rowFollowers;
+            postsCount += Number(row.posts || 0);
           }
+
+          const engagementRate = totalImpressions > 0
+            ? parseFloat((((totalLikes + totalComments + totalShares) / totalImpressions) * 100).toFixed(2))
+            : 0;
 
           await adminSupabase.from("platform_metrics").upsert(
             {
@@ -117,15 +132,21 @@ export async function POST(request: NextRequest) {
               user_id: user.id,
               platform,
               metric_date: today,
+              followers_count: followersCount,
               total_impressions: totalImpressions,
               total_reach: totalReach,
+              total_likes: totalLikes,
+              total_comments: totalComments,
+              total_shares: totalShares,
+              total_views: totalViews,
+              posts_count: postsCount,
+              engagement_rate: engagementRate,
               platform_data: {
                 source: "windsor",
                 account_id: accountId,
                 total_clicks: totalClicks,
                 total_spend: totalSpend,
                 rows_synced: rows.length,
-                sample: rows.slice(0, 3),
               },
             },
             { onConflict: "connected_account_id,metric_date" }

@@ -1,4 +1,4 @@
-import DashboardClient from "./DashboardClient";
+import AnalyticsClient from "./AnalyticsClient";
 
 export const metadata = {
   title: "Analytics Dashboard | DataProFlow",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function AnalyticsPage() {
-  return <DashboardClient />;
+  return <AnalyticsClient />;
 }

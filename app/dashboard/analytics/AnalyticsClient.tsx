@@ -100,6 +100,7 @@ export default function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState("30");
+  const [activePlatform, setActivePlatform] = useState<string>("all");
 
   const fetchAnalytics = async () => {
     try {
@@ -124,6 +125,28 @@ export default function AnalyticsClient() {
     setRefreshing(true);
     fetchAnalytics();
   };
+
+  // Filter data by active platform
+  const filteredBreakdown = data?.platformBreakdown.filter(
+    (p) => activePlatform === "all" || p.platform === activePlatform
+  ) ?? [];
+
+  const filteredTotals = activePlatform === "all"
+    ? data?.totals
+    : (() => {
+        const p = data?.platformBreakdown.find((pb) => pb.platform === activePlatform);
+        return p ? {
+          followers: p.followers,
+          impressions: p.impressions,
+          reach: 0,
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          views: 0,
+          posts: 0,
+          engagementRate: p.engagement,
+        } : data?.totals;
+      })();
 
   if (loading) {
     return (
@@ -153,28 +176,30 @@ export default function AnalyticsClient() {
     );
   }
 
+  const displayTotals = filteredTotals || data.totals;
+
   const stats = [
     {
-      label: "Total Followers",
-      value: formatNumber(data.totals.followers),
+      label: "Followers",
+      value: formatNumber(displayTotals.followers),
       icon: Users,
       color: "bg-blue-500",
     },
     {
-      label: "Total Impressions",
-      value: formatNumber(data.totals.impressions),
+      label: "Impressions",
+      value: formatNumber(displayTotals.impressions),
       icon: Eye,
       color: "bg-purple-500",
     },
     {
       label: "Engagement Rate",
-      value: `${data.totals.engagementRate}%`,
+      value: `${displayTotals.engagementRate ?? data.totals.engagementRate}%`,
       icon: Heart,
       color: "bg-pink-500",
     },
     {
-      label: "Total Interactions",
-      value: formatNumber(data.totals.likes + data.totals.comments + data.totals.shares),
+      label: "Interactions",
+      value: formatNumber(displayTotals.likes + displayTotals.comments + displayTotals.shares),
       icon: MessageCircle,
       color: "bg-green-500",
     },
@@ -223,35 +248,44 @@ export default function AnalyticsClient() {
         </div>
       </div>
 
-      {/* Connected Accounts Banner */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-        <h3 className="font-semibold text-gray-900 mb-3">Connected Accounts</h3>
-        <div className="flex flex-wrap gap-3">
+      {/* Platform Tabs */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          {/* All Platforms tab */}
+          <button
+            type="button"
+            onClick={() => setActivePlatform("all")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activePlatform === "all"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            All Platforms
+          </button>
+          {/* Per-account tabs */}
           {data.accounts.map((account) => {
             const Icon = platformIcons[account.platform] || Instagram;
             const colorClass = platformColors[account.platform] || "bg-gray-500";
-            const isGradient = colorClass.includes("from-");
+            const isActive = activePlatform === account.platform;
             return (
-              <div
+              <button
                 key={account.id}
-                className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl"
+                type="button"
+                onClick={() => setActivePlatform(account.platform)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  isActive
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100"
+                }`}
               >
-                <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                    isGradient ? `bg-gradient-to-br ${colorClass}` : colorClass
-                  }`}
-                >
-                  <Icon className="w-4 h-4 text-white" />
+                <div className={`w-5 h-5 rounded flex items-center justify-center ${colorClass.includes("from-") ? `bg-gradient-to-br ${colorClass}` : colorClass}`}>
+                  <Icon className="w-3 h-3 text-white" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-tight">
-                    {account.platform_username || "—"}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {platformLabels[account.platform] || account.platform}
-                  </p>
-                </div>
-              </div>
+                <span>{account.platform_username || platformLabels[account.platform] || account.platform}</span>
+                <span className="text-xs opacity-60 capitalize">{platformLabels[account.platform] || account.platform}</span>
+              </button>
             );
           })}
         </div>
@@ -284,7 +318,7 @@ export default function AnalyticsClient() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <h3 className="font-semibold text-gray-900 mb-4">Platform Breakdown</h3>
           <div className="space-y-3">
-            {data.platformBreakdown.map((platform) => {
+            {(filteredBreakdown.length > 0 ? filteredBreakdown : data.platformBreakdown).map((platform) => {
               const Icon = platformIcons[platform.platform] || Instagram;
               const colorClass = platformColors[platform.platform] || "bg-gray-500";
               const isGradient = colorClass.includes("from-");
@@ -320,7 +354,7 @@ export default function AnalyticsClient() {
               );
             })}
           </div>
-          {data.platformBreakdown.every(p => p.followers === 0 && p.impressions === 0) && (
+          {(filteredBreakdown.length > 0 ? filteredBreakdown : data.platformBreakdown).every(p => p.followers === 0 && p.impressions === 0) && (
             <p className="mt-4 text-xs text-gray-400 text-center">
               Go to{" "}
               <Link href="/dashboard/connections" className="text-primary underline">
@@ -340,28 +374,28 @@ export default function AnalyticsClient() {
                 <Heart className="w-4 h-4 text-pink-500" />
                 <span className="text-sm text-gray-600">Likes</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(data.totals.likes)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(displayTotals.likes)}</p>
             </div>
             <div className="p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <MessageCircle className="w-4 h-4 text-blue-500" />
                 <span className="text-sm text-gray-600">Comments</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(data.totals.comments)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(displayTotals.comments)}</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Share2 className="w-4 h-4 text-green-500" />
                 <span className="text-sm text-gray-600">Shares</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(data.totals.shares)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(displayTotals.shares)}</p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Eye className="w-4 h-4 text-purple-500" />
                 <span className="text-sm text-gray-600">Views</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(data.totals.views)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(displayTotals.views)}</p>
             </div>
           </div>
         </div>
