@@ -108,6 +108,7 @@ const availablePlatforms = [
     icon: Facebook,
     color: "bg-blue-600",
     windsorSource: "facebook_organic",
+    authSource: "facebook",
   },
   {
     id: "instagram",
@@ -117,6 +118,7 @@ const availablePlatforms = [
     icon: Instagram,
     color: "bg-gradient-to-br from-purple-500 to-pink-500",
     windsorSource: "instagram",
+    authSource: "instagram",
   },
   {
     id: "tiktok_organic",
@@ -126,6 +128,7 @@ const availablePlatforms = [
     icon: Music2,
     color: "bg-black",
     windsorSource: "tiktok_organic",
+    authSource: "tiktok",
   },
 ];
 
@@ -243,7 +246,7 @@ export default function ConnectionsClient({
       const initRes = await fetch("/api/windsor/init-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: connectModal.platform.id }),
+        body: JSON.stringify({ platform: connectModal.platform.authSource }),
       });
       
       const initData = await initRes.json();

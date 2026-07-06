@@ -4,7 +4,8 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const ALLOWED_SOURCES = new Set([
-  "facebook_organic", "instagram", "tiktok_organic", "tiktok_ads",
+  "facebook", "facebook_organic", "instagram",
+  "tiktok", "tiktok_organic", "tiktok_ads",
   "google_ads", "google_analytics4", "linkedin",
   "twitter", "snapchat", "pinterest",
 ]);
